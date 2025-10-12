@@ -96,6 +96,57 @@
       margin-top: 10px;
     }
 
+
+
+   /* --- Follow X Button --- */
+#follow-x-container {
+  position: fixed;
+  top: 15px;
+  left: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+#follow-x-btn {
+  background: #ff4fd8;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  box-shadow: 0 0 12px #ff4fd8;
+  transition: all 0.3s ease;
+}
+
+#follow-x-btn:hover {
+  background: #ff9de5;
+  box-shadow: 0 0 20px #ff9de5;
+}
+
+.aesthetic-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffbdf0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  cursor: not-allowed;
+  opacity: 0.8;
+  transition: all 0.3s ease;
+  margin-left: 2px;
+}
+
+.aesthetic-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}
+
     /* --- Phantom Connect Button --- */
     #wallet-connect-container {
       position: fixed;
@@ -144,10 +195,22 @@
     <p id="wallet-address-display"></p>
   </div>
 
+<!-- === Follow X Button === -->
+<div id="follow-x-container">
+  <button id="follow-x-btn" onclick="window.open('https://x.com/retardioostr', '_blank')">
+    Follow X
+  </button>
+
+ <!-- === Aesthetic Non-Functional Button === -->
+  <button class="aesthetic-btn" disabled>Compatible for all devices</button>
+</div>
+
+
   <div class="dashboard">
     <h1>RetardioStrategy™</h1>
     <h2>NFTStrategy (Solana Edition)</h2>
     <p class="contract">Contract: <span id="contract">Coming soon...</span></p>
+
 
 <!-- === Project Description === -->
 <div class="project-description">
@@ -169,29 +232,56 @@
       <div class="stat"><span class="label">SOL Price</span><span id="sol-price">$0.00</span></div>
       <div class="stat"><span class="label">$RTSTRDGY Price</span><span id="token-price">$0.0000</span></div>
       <div class="stat"><span class="label">Liquidity</span><span id="market-cap">$0.00M</span></div>
-      <div class="stat"><span class="label">Burned Amount</span><span id="burned">0 (0.00%)</span></div>
       <div class="stat"><span class="label">24h Change</span><span id="change">-0.00%</span></div>
     </div>
 
     <!-- === Treasury Section === -->
     <div class="treasury">
       <h3>Treasury Holdings</h3>
-      <p>Wallet: <span id="wallet-address">Insert wallet address here</span></p>
+      <p>Treasury: <a id="Treasury" href="#" target="_blank">Insert wallet address here</a></p>
       <p>NFTs held: <span id="nft-count">0</span></p>
     </div>
 
-    <!-- === Progress Section === -->
-    <div class="progress-section">
-      <h3>Progress to Next Purchase</h3>
-      <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width: 0%;"></div></div>
-      <p id="progress-percent">0%</p>
-      <p>When the machine acquires the missing <span id="missing-sol">0.0000</span> SOL, the first entity to trigger the mechanism will process the system forward and earn a reward.</p>
-      <p><strong>Need:</strong> <span id="need-sol">0.000</span> more SOL</p>
-      <p class="note">No SOL to convert</p>
-    </div>
+ <!-- === Progress Section === -->
+<div class="progress-section">
+  <h3>Progress to Next Purchase</h3>
 
-   <!-- === DexScreener Chart === -->
-   <div id="tradingview-chart"></div>
+  <!-- Hidden input for Next Purchase uploads -->
+  <input type="file" id="next-nft-upload" accept="image/*" style="display:none">
+
+  <!-- Where the uploaded NFT will appear -->
+  <div id="next-nft-preview" class="next-nft">
+    <p>No next NFT uploaded yet.</p>
+  </div>
+
+  <div class="progress-bar">
+    <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+  </div>
+
+  <p id="progress-percent">0%</p>
+
+  <p>
+    When the machine acquires the missing
+    <span id="missing-sol">0.0000</span> SOL, the entity to trigger the mechanism will process
+    the purchase from floor price, which will be held by the treasury and relisted.
+  </p>
+
+  <p><strong>Need:</strong> <span id="need-sol">0.000</span> more SOL</p>
+</div>
+
+
+
+<iframe
+  id="gecko-frame"
+  src="https://www.geckoterminal.com/solana/pools/5eLRsN6qDQTQSBF8KdW4B8mVpeeAzHCCwaDptzMyszxH?embed=1"
+  width="100%"
+  height="500"
+  style="border:0; border-radius:12px; overflow:hidden;"
+  allowfullscreen
+></iframe>
+
+
+
 
    <!-- === Treasury NFT Gallery === -->
    <div class="gallery">
@@ -219,229 +309,128 @@
      <button id="u1" class="dev-btn">u1</button>
      <button id="s1" class="dev-btn">s1</button>
      <button id="pa" class="dev-btn">pa</button>
+     <button id="np" class="dev-btn">NP</button>
+     <button id="ba" class="dev-btn">BA</button> <!-- 🔥 Burn Amount -->
    </div>
 
-   <!-- === Sold NFT Gallery === -->
-   <div class="gallery">
-     <div class="gallery-header">
-       <h3>Sold NFTs</h3>
-     </div>
-
-     <p id="sold-summary">RetardioStrategy™ has sold 0 NFTs</p>
-     <input type="file" id="sold-upload" accept="image/*" style="display:none" multiple />
-     <div id="sold-grid" class="gallery-grid"></div>
-   </div>
+ <!-- === Sold NFT Gallery === -->
+<div class="gallery sold-gallery">
+  <div class="gallery-header">
+    <h3>Sold NFTs</h3>
   </div>
+
+  <p id="sold-summary">RetardioStrategy™ has sold 0 NFTs</p>
+ <p>Burned Amount: <span id="burned-percent">0%</span></p>
+  <input type="file" id="sold-upload" accept="image/*" style="display:none" multiple />
+  <div id="sold-gallery-grid" class="gallery-grid"></div>
+</div>
+
 
 <!-- === JS === -->
 <script>
 
-  // === Load global chart ===
-  async function loadTradingViewChart(pairAddress) {
-    const chartContainer = document.getElementById("tradingview-chart");
-    chartContainer.innerHTML = "";
-    const iframe = document.createElement("iframe");
-    iframe.src = `https://dexscreener.com/solana/${pairAddress}?embed=1&theme=dark`;
-    iframe.width = "100%";
-    iframe.height = "500";
-    iframe.style.border = "0";
-    iframe.allowFullscreen = true;
-    chartContainer.appendChild(iframe);
-  }
+async function loadPoolChart() {
+  try {
+    const ohlcvRes = await fetch(
+      `https://api.geckoterminal.com/api/v2/networks/solana/pools/${poolId}/ohlcv/hour`
+    );
 
-  async function fetchChart() {
-    try {
-      const res = await fetch("/chart");
-      const data = await res.json();
-      if (data?.address) {
-        loadTradingViewChart(data.address);
-        document.getElementById("contract").textContent = data.address;
-      }
-    } catch (e) {
-      console.error("Error loading chart:", e);
+    if (ohlcvRes.status === 404) {
+      console.warn("No OHLCV data for this pool — showing current price instead");
+      const poolRes = await fetch(
+        `https://api.geckoterminal.com/api/v2/networks/solana/pools/${poolId}`
+      );
+      const poolData = await poolRes.json();
+      const price = poolData?.data?.attributes?.base_token_price_usd;
+      chartDiv.innerHTML = `<div style="font-size:2rem;color:#ff4fd8;text-align:center;">$${Number(price).toFixed(4)}</div>`;
+      return;
     }
+
+    if (!ohlcvRes.ok) throw new Error(`HTTP ${ohlcvRes.status}`);
+    const data = await ohlcvRes.json();
+    const prices = data?.data?.attributes?.ohlcv_list;
+
+    if (!prices) throw new Error("No OHLCV data");
+
+    const chartData = prices.map(([timestamp, open, high, low, close]) => ({
+      time: Math.floor(new Date(timestamp).getTime() / 1000),
+      open: +open,
+      high: +high,
+      low: +low,
+      close: +close
+    }));
+
+    candleSeries.setData(chartData);
+  } catch (err) {
+    chartDiv.innerHTML = "⚠️ Failed to load chart.";
+    console.error("Error loading chart:", err);
   }
+}
 
-  fetchChart();
+// === Dev Unlock (Ctrl+D) ===
+window.addEventListener("keydown", async (e) => {
+  if (e.ctrlKey && e.key.toLowerCase() === "d") {
+    const key = prompt("Enter developer key:");
+    if (!key) return;
 
-  // === Dev Unlock (Ctrl+D) ===
-  window.addEventListener("keydown", (e) => {
-    if (e.ctrlKey && e.key.toLowerCase() === "d") {
-      const key = prompt("Enter developer key:");
-      if (key === "RetardioDev123") {
+    try {
+      const res = await fetch("/verify-dev", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key }),
+      });
+      const data = await res.json();
+
+      if (data.valid) {
         devUnlocked = true;
         document.getElementById("dev-panel").style.display = "flex";
         alert("Developer mode unlocked 🔓");
       } else {
         alert("Access denied 🚫");
       }
+    } catch (err) {
+      console.error("Dev verify failed:", err);
+      alert("Server error ❌");
     }
-  });
-
-  // === Global Treasury Gallery Load ===
-async function loadGallery() {
-  try {
-    const res = await fetch("/gallery");
-    const data = await res.json();
-    const grid = document.getElementById("gallery-grid");
-    grid.innerHTML = "";
-
-    data.forEach((nft) => {
-      // --- NFT Card ---
-      const card = document.createElement("div");
-      card.className = "nft-card";
-
-      const img = document.createElement("img");
-      img.src = nft.url || "placeholder.png"; // fallback if URL missing
-      img.alt = nft.name;
-      img.className = "nft-img";
-
-      const info = document.createElement("div");
-      info.className = "nft-info";
-
-      const name = document.createElement("p");
-      name.textContent = nft.name;
-      name.className = "nft-name";
-
-      const price = document.createElement("p");
-      price.textContent = `Listing Price: ${nft.price} SOL`;
-      price.className = "nft-price";
-
-const viewBtn = document.createElement("button"); 
-viewBtn.textContent = "View Listing";
-viewBtn.className = "view-btn";
-viewBtn.onclick = () => {
-  window.open(`https://magiceden.io/item-details/${encodeURIComponent(nft.id)}`, "_blank");
-};
-
-
-
-      // --- Developer delete/sold logic ---
-      card.addEventListener("click", async (e) => {
-        if (!devUnlocked) return;
-        if (e.target !== card) return; // avoid triggering when clicking button
-
-        const confirmAction = confirm(`🧹 Remove or sell "${nft.name}"?`);
-        if (!confirmAction) return;
-
-        const type = prompt("Type 'delete' to remove, or 'sold' to move to sold gallery:");
-        if (!type) return;
-
-        const action = type.trim().toLowerCase();
-        if (action === "delete") {
-          await fetch("/delete-gallery", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: "RetardioDev123", name: nft.name }),
-          });
-          loadGallery();
-        } else if (action === "sold") {
-          const soldPrice = prompt("Enter Sold Price (SOL):");
-          await fetch("/move-to-sold", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ key: "RetardioDev123", name: nft.name, soldPrice }),
-          });
-          loadGallery();
-          loadSoldGallery();
-        }
-      });
-
-      grid.appendChild(card);
-    });
-
-    document.getElementById("gallery-summary").textContent =
-      `RetardioStrategy™ is currently holding ${data.length} NFTs`;
-
-  } catch (err) {
-    console.warn("loadGallery failed:", err);
   }
-}
+});
 
-// === Global Sold Gallery Load ===
-async function loadSoldGallery() {
-  try {
-    const res = await fetch("/sold");
-    const data = await res.json();
-    const grid = document.getElementById("sold-grid");
-    grid.innerHTML = "";
+// === u1 (Upload Treasury NFTs - GLOBAL) ===
+document.getElementById("u1").addEventListener("click", () => {
+  if (!devUnlocked) return alert("🚫 Developer mode required.");
+  const fileInput = document.getElementById("nft-upload");
+  fileInput.click();
 
-    data.forEach((nft) => {
-      const img = document.createElement("img");
-      img.src = nft.url;
-      img.alt = nft.name;
-      img.title = `Name: ${nft.name}\nSold For: ${nft.price} SOL`;
-      img.style.width = "100px";
-      img.style.margin = "5px";
-      img.style.cursor = "pointer";
+  fileInput.onchange = async () => {
+    const formData = new FormData();
 
-      img.addEventListener("click", async () => {
-        if (!devUnlocked) return alert("🚫 Developer mode required.");
-        const confirmDelete = confirm(`🧹 Delete sold NFT "${nft.name}"?`);
-        if (!confirmDelete) return;
+    for (const file of fileInput.files) {
+      const name = prompt("Enter NFT Name:");
+      const price = prompt("Enter Listing Price (SOL):");
+      const magicEdenUrl = prompt("Enter Magic Eden item URL (optional):", "https://magiceden.io/item-details/");
 
-        await fetch("/delete-sold", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ key: "RetardioDev123", name: nft.name }),
-        });
+      formData.append("images", file);
+      formData.append(
+        "meta",
+        JSON.stringify({ name, price, magicEdenUrl })
+      );
+    }
 
-        loadSoldGallery();
-      });
-
-      grid.appendChild(img);
-    });
-
-    document.getElementById("sold-summary").textContent =
-      `RetardioStrategy™ has sold ${data.length} NFTs`;
-  } catch (err) {
-    console.warn("loadSoldGallery failed:", err);
-  }
-}
-
-
-  // === pa (Update global chart) ===
-  document.getElementById("pa").addEventListener("click", async () => {
-    if (!devUnlocked) return alert("🚫 Developer mode required.");
-    const address = prompt("Paste new token contract:");
-    if (!address) return;
-    const res = await fetch("/update-chart", {
+    const res = await fetch("/upload-gallery", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ key: "RetardioDev123", address }),
+      body: formData,
     });
     const data = await res.json();
-    if (data.success) {
-      alert("✅ Chart updated globally!");
-      fetchChart();
-    } else {
-      alert("❌ Failed to update chart.");
-    }
-  });
 
-  // === u1 (Upload Treasury NFTs - GLOBAL) ===
-  document.getElementById("u1").addEventListener("click", () => {
-    if (!devUnlocked) return alert("🚫 Developer mode required.");
-    const fileInput = document.getElementById("nft-upload");
-    fileInput.click();
-    fileInput.onchange = async () => {
-      const formData = new FormData();
-      for (const file of fileInput.files) {
-        const name = prompt("Enter NFT Name:");
-        const price = prompt("Enter Listing Price (SOL):");
-        formData.append("images", file);
-        formData.append("meta", JSON.stringify({ name, price }));
-      }
-      const res = await fetch("/upload-gallery", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.success) {
-        alert("✅ Treasury NFT uploaded globally!");
-        loadGallery();
-      } else {
-        alert("❌ Upload failed.");
-      }
-    };
-  });
+    if (data.success) {
+      alert("✅ Treasury NFT uploaded globally!");
+      loadGallery();
+    } else {
+      alert("❌ Upload failed.");
+    }
+  };
+});
+
 
   // === s1 (Upload Sold NFTs - GLOBAL) ===
   document.getElementById("s1").addEventListener("click", () => {
@@ -467,13 +456,75 @@ async function loadSoldGallery() {
     };
   });
 
+// === BA (Burn Amount - Set Burned % Display) ===
+document.getElementById("ba").addEventListener("click", () => {
+  if (!devUnlocked) return alert("🚫 Developer mode required.");
+
+  // Ask the dev for a burn % (number only)
+  const value = prompt("Enter Burned Percentage (0-100):", "0");
+  if (value === null) return; // cancelled
+  const percent = parseFloat(value);
+
+  if (isNaN(percent) || percent < 0 || percent > 100) {
+    alert("❌ Invalid value. Please enter a number between 0 and 100.");
+    return;
+  }
+
+  // Save locally so it persists between reloads
+  localStorage.setItem("burnPercent", percent);
+
+  // Update UI immediately
+  document.getElementById("burned-percent").textContent = `${percent}% 🔥`;
+
+  alert(`🔥 Burn percentage updated to ${percent}%`);
+});
+
+
+
+function launchConfetti() {
+  const duration = 10000;
+  const animationEnd = Date.now() + duration;
+  const defaults = { startVelocity: 25, spread: 360, ticks: 60, zIndex: 9999 };
+
+  function randomInRange(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  (function frame() {
+    // Use a CDN-free version if you already have canvas-confetti
+    if (typeof confetti === "function") {
+      confetti({
+        ...defaults,
+        particleCount: 50,
+        origin: {
+          x: randomInRange(0.1, 0.9),
+          y: Math.random() - 0.2,
+        },
+      });
+    }
+    if (Date.now() < animationEnd) {
+      requestAnimationFrame(frame);
+    }
+  })();
+}
 
 
   // === Purple Orbs Background ===
   const canvas = document.getElementById("orbCanvas");
   const ctx = canvas.getContext("2d");
-  function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
   resizeCanvas();
+
+  // Available orb colors
+  const orbColors = [
+    { color: "#FF4FD8", glow: "#FF4FD8" }, // Original purple-pink
+    { color: "#9945FF", glow: "#9945FF" }, // Solana purple
+    { color: "#14F195", glow: "#14F195" }  // Solana green
+  ];
 
   class Orb {
     constructor() {
@@ -483,16 +534,23 @@ async function loadSoldGallery() {
       this.dx = (Math.random() - 0.5) * 0.5;
       this.dy = (Math.random() - 0.5) * 0.5;
       this.opacity = 0.1 + Math.random() * 0.2;
+
+      // Random color from Solana + original palette
+      const chosen = orbColors[Math.floor(Math.random() * orbColors.length)];
+      this.baseColor = chosen.color;
+      this.glowColor = chosen.glow;
     }
+
     draw() {
       ctx.beginPath();
-      ctx.fillStyle = `rgba(255, 79, 216, ${this.opacity})`;
-      ctx.shadowColor = "#ff4fd8";
+      ctx.fillStyle = `${this.hexToRgba(this.baseColor, this.opacity)}`;
+      ctx.shadowColor = this.glowColor;
       ctx.shadowBlur = 40;
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI*2);
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
       ctx.fill();
       ctx.shadowBlur = 0;
     }
+
     update() {
       this.x += this.dx;
       this.y += this.dy;
@@ -500,15 +558,26 @@ async function loadSoldGallery() {
       if (this.y < 0 || this.y > canvas.height) this.dy *= -1;
       this.draw();
     }
+
+    // Helper to convert hex → rgba
+    hexToRgba(hex, alpha) {
+      const bigint = parseInt(hex.slice(1), 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
   }
 
   const orbs = Array.from({ length: 15 }, () => new Orb());
+
   function animate() {
     ctx.fillStyle = "rgba(10,0,10,0.3)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    orbs.forEach(o => o.update());
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    orbs.forEach((o) => o.update());
     requestAnimationFrame(animate);
   }
+
   animate();
   window.addEventListener("resize", resizeCanvas);
 </script>
@@ -597,6 +666,11 @@ window.addEventListener("load", async () => {
   }
 });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
 <script src="script.js"></script>
 </body>
 </html>
+
+
