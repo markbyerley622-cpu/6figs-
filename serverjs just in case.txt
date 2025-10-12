@@ -1,0 +1,158 @@
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+const fetch = require("node-fetch");
+const multer = require("multer");
+
+const app = express();
+app.use(express.json());
+app.use(express.static("public"));
+
+// === Setup upload folder ===
+const UPLOADS_DIR = path.join(__dirname, "public", "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+
+const upload = multer({ dest: UPLOADS_DIR });
+
+const CHART_FILE = path.join(__dirname, "chart.json");
+const GALLERY_FILE = path.join(__dirname, "gallery.json");
+const SOLD_FILE = path.join(__dirname, "sold.json");
+
+// === Ensure data files exist (initialize properly) ===
+if (!fs.existsSync(CHART_FILE))
+  fs.writeFileSync(CHART_FILE, JSON.stringify({ address: "So11111111111111111111111111111111111111112" }, null, 2));
+if (!fs.existsSync(GALLERY_FILE)) fs.writeFileSync(GALLERY_FILE, JSON.stringify([]));
+if (!fs.existsSync(SOLD_FILE)) fs.writeFileSync(SOLD_FILE, JSON.stringify([]));
+
+// === Get chart ===
+app.get("/chart", (req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync(CHART_FILE, "utf-8"));
+    res.json(data);
+  } catch {
+    res.json({ address: "So11111111111111111111111111111111111111112" });
+  }
+});
+
+// === Update chart ===
+app.post("/update-chart", (req, res) => {
+  const { key, address } = req.body;
+  if (key !== "RetardioDev123") return res.status(403).json({ error: "Access denied" });
+  fs.writeFileSync(CHART_FILE, JSON.stringify({ address }, null, 2));
+  res.json({ success: true });
+});
+
+// === DexScreener Proxy ===
+app.get("/dex/:pair", async (req, res) => {
+  const pair = req.params.pair;
+  try {
+    const r = await fetch(`https://api.dexscreener.com/latest/dex/pairs/solana/${pair}`);
+    const data = await r.json();
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ error: "DexScreener API failed", details: err.message });
+  }
+});
+
+// === Get Gallery ===
+app.get("/gallery", (req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+    res.json(data);
+  } catch {
+    res.json([]);
+  }
+});
+
+// === Get Sold Gallery ===
+app.get("/sold", (req, res) => {
+  try {
+    const data = JSON.parse(fs.readFileSync(SOLD_FILE, "utf-8"));
+    res.json(data);
+  } catch {
+    res.json([]);
+  }
+});
+
+// === Upload to Gallery ===
+app.post("/upload-gallery", upload.array("images"), (req, res) => {
+  try {
+    const metas = req.body.meta;
+    const files = req.files;
+    let gallery = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+
+    files.forEach((file, i) => {
+      const meta = JSON.parse(Array.isArray(metas) ? metas[i] : metas);
+      const url = `/uploads/${file.filename}`;
+      gallery.push({ ...meta, url });
+    });
+
+    fs.writeFileSync(GALLERY_FILE, JSON.stringify(gallery, null, 2));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("upload-gallery failed:", err);
+    res.status(500).json({ success: false });
+  }
+});
+
+// === Upload to Sold Gallery ===
+app.post("/upload-sold", upload.array("images"), (req, res) => {
+  try {
+    const metas = req.body.meta;
+    const files = req.files;
+    let sold = JSON.parse(fs.readFileSync(SOLD_FILE, "utf-8"));
+
+    files.forEach((file, i) => {
+      const meta = JSON.parse(Array.isArray(metas) ? metas[i] : metas);
+      const url = `/uploads/${file.filename}`;
+      sold.push({ ...meta, url });
+    });
+
+    fs.writeFileSync(SOLD_FILE, JSON.stringify(sold, null, 2));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("upload-sold failed:", err);
+    res.status(500).json({ success: false });
+  }
+});
+
+// === Delete Gallery Item (by name) ===
+app.post("/delete-gallery", (req, res) => {
+  const { key, name } = req.body;
+  if (key !== "RetardioDev123") return res.status(403).json({ error: "Access denied" });
+
+  try {
+    let gallery = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
+    const newGallery = gallery.filter(nft => nft.name !== name);
+    fs.writeFileSync(GALLERY_FILE, JSON.stringify(newGallery, null, 2));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("delete-gallery failed:", err);
+    res.status(500).json({ success: false });
+  }
+});
+
+// === Delete Sold Item (by name) ===
+app.post("/delete-sold", (req, res) => {
+  const { key, name } = req.body;
+  if (key !== "RetardioDev123") return res.status(403).json({ error: "Access denied" });
+
+  try {
+    let sold = JSON.parse(fs.readFileSync(SOLD_FILE, "utf-8"));
+    const newSold = sold.filter(nft => nft.name !== name);
+    fs.writeFileSync(SOLD_FILE, JSON.stringify(newSold, null, 2));
+    res.json({ success: true });
+  } catch (err) {
+    console.error("delete-sold failed:", err);
+    res.status(500).json({ success: false });
+  }
+});
+
+// === Catch-all for missing routes (prevents JSON parse errors) ===
+app.use((req, res) => {
+  res.status(404).json({ error: "Not found" });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+

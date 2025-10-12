@@ -1,0 +1,640 @@
+/* Global Styles */
+body {
+  margin: 0;
+  padding: 0;
+  background: #0a0a0a;
+  color: #ff4fd8;
+  font-family: 'Courier New', monospace;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+/* Dashboard Container */
+.dashboard {
+  width: 100%;
+  max-width: 900px;
+  background: rgba(20, 20, 20, 0.95);
+  border: 1px solid #ff4fd8;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 0 30px #ff4fd880;
+  text-align: center;
+}
+
+/* Headings */
+h1 {
+  font-size: 2em;
+  margin-bottom: 0.2em;
+  text-shadow: 0 0 10px #ff4fd8;
+}
+
+h2 {
+  font-size: 1.3em;
+  color: #fff;
+  margin-bottom: 1em;
+}
+
+.contract {
+  color: #bbb;
+  font-size: 0.9em;
+}
+
+/* Stats Grid */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 30px;
+}
+
+.stat {
+  background: #111;
+  border: 1px solid #ff4fd840;
+  border-radius: 12px;
+  padding: 12px;
+  transition: all 0.3s;
+}
+
+.stat:hover {
+  border-color: #ff4fd8;
+  box-shadow: 0 0 10px #ff4fd850;
+}
+
+.label {
+  display: block;
+  font-size: 0.9em;
+  color: #ff4fd8;
+  margin-bottom: 4px;
+}
+
+.stat span, .stat a {
+  color: #fff;
+  text-decoration: none;
+}
+
+/* Treasury */
+.treasury {
+  margin-top: 40px;
+  background: #141414;
+  border: 1px solid #ff4fd840;
+  border-radius: 15px;
+  padding: 20px;
+}
+
+.treasury h3 {
+  margin-top: 0;
+  color: #ff4fd8;
+  text-shadow: 0 0 8px #ff4fd8;
+}
+
+.treasury-values {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  font-size: 1.1em;
+  margin-top: 10px;
+}
+
+/* === Dopamine Progress Glow === */
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 1.2s ease-in-out, background 1s linear, box-shadow 1s ease-in-out;
+  background: linear-gradient(90deg, #ff4fd8, #ff82e4);
+  box-shadow: 0 0 20px #ff4fd880;
+  border-radius: 10px;
+}
+
+/* Active glowing state */
+.progress-fill.glow {
+  animation: glowPulse 2s infinite alternate ease-in-out;
+}
+
+/* Pulse animation for near-complete state */
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 20px #14F195, 0 0 40px #14F195, 0 0 60px #14F195;
+    background: linear-gradient(90deg, #14F195, #9945FF);
+  }
+  100% {
+    box-shadow: 0 0 25px #14F195, 0 0 70px #14F195, 0 0 100px #9945FF;
+    background: linear-gradient(90deg, #9945FF, #14F195);
+  }
+}
+
+/* Smooth percentage text animation */
+#progress-percent {
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 0 0 8px #ff4fd8, 0 0 15px #ff82e4;
+  transition: color 1s ease-in-out, text-shadow 1s ease-in-out;
+}
+
+/* When near goal, make text flash Solana glow */
+#progress-percent.surge {
+  color: #14F195;
+  text-shadow: 0 0 10px #14F195, 0 0 20px #9945FF;
+}
+
+/* Progress container pop */
+.progress-section {
+  box-shadow: 0 0 40px #ff4fd820, inset 0 0 20px #ff4fd810;
+  transition: box-shadow 0.6s ease-in-out;
+}
+
+.progress-section.active {
+  box-shadow: 0 0 50px #14F19550, inset 0 0 30px #9945FF30;
+}
+
+/* === Solana Energy Progress Section === */
+.progress-section {
+  width: 100%;
+  max-width: 520px;
+  margin: 30px auto;
+  padding: 25px;
+  border-radius: 18px;
+  background: radial-gradient(circle at center, rgba(20, 241, 149, 0.08), rgba(153, 69, 255, 0.05) 70%);
+  box-shadow: 0 0 40px #ff4fd810, inset 0 0 20px #ff4fd810;
+  backdrop-filter: blur(10px);
+  text-align: center;
+  color: #fff;
+  overflow: hidden;
+  position: relative;
+  transition: box-shadow 0.6s ease-in-out, transform 0.6s ease-in-out;
+}
+
+/* subtle floating effect when active */
+.progress-section.active {
+  box-shadow: 0 0 70px #14F19560, inset 0 0 40px #9945FF40;
+  transform: scale(1.02);
+}
+
+/* === Progress Bar Container === */
+.progress-bar {
+  width: 100%;
+  height: 22px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  margin-top: 15px;
+  box-shadow: inset 0 0 15px #000;
+}
+
+/* === The Liquid Energy Fill === */
+.progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(
+    90deg,
+    #ff4fd8 0%,
+    #9945FF 30%,
+    #14F195 100%
+  );
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: width 1.5s ease-in-out, box-shadow 1s ease-in-out, background 1.2s ease-in-out;
+  box-shadow: 0 0 25px #ff4fd880;
+}
+
+/* === Liquid Ripple Overlay === */
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 200%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 255, 255, 0.25) 0px,
+    rgba(255, 255, 255, 0.1) 10px,
+    transparent 20px,
+    transparent 30px
+  );
+  animation: liquidFlow 3.5s linear infinite;
+  opacity: 0.7;
+}
+
+/* === Glow & Pulse Animations === */
+.progress-fill.glow {
+  animation: solanaGlow 2.5s infinite alternate ease-in-out;
+}
+
+@keyframes solanaGlow {
+  0% {
+    box-shadow: 0 0 30px #14F195, 0 0 60px #9945FF;
+  }
+  100% {
+    box-shadow: 0 0 60px #14F195, 0 0 120px #9945FF;
+  }
+}
+
+@keyframes liquidFlow {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* === Progress Text === */
+#progress-percent {
+  margin-top: 15px;
+  font-weight: bold;
+  font-size: 1.2em;
+  letter-spacing: 0.5px;
+  color: #fff;
+  text-shadow: 0 0 8px #ff4fd8, 0 0 20px #ff82e4;
+  transition: color 1s ease-in-out, text-shadow 1s ease-in-out;
+}
+
+#progress-percent.surge {
+  color: #14F195;
+  text-shadow: 0 0 12px #14F195, 0 0 24px #9945FF;
+}
+
+/* === Info Text === */
+#need-sol, #missing-sol {
+  color: #14F195;
+  text-shadow: 0 0 5px #14F19590;
+  font-weight: 500;
+}
+
+.progress-section p {
+  font-size: 0.95rem;
+  line-height: 1.4em;
+  color: #ddd;
+}
+
+
+/* force the preview area to only fit the card */
+#next-nft-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 15px;
+  width: 100%;
+}
+
+/* card sizing fix */
+#next-nft-preview .nft-card {
+  width: 180px;
+  max-width: 180px;
+  background: rgba(255, 79, 216, 0.05);
+  border: 1px solid #ff4fd8;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* shrink if container tries to expand it */
+#next-nft-preview .nft-card img {
+  width: 160px !important;
+  height: 160px !important;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+/* text formatting */
+#next-nft-preview .nft-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#next-nft-preview .nft-name {
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  color: #ff4fd8;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+#next-nft-preview .nft-price {
+  font-family: 'Courier New', monospace;
+  color: #ff9de5;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+
+
+/* Gallery */
+.gallery {
+  margin-top: 50px;
+  padding-top: 20px;
+  border-top: 1px solid #ff4fd840;
+}
+
+.gallery h3 {
+  color: #ff4fd8;
+  margin-bottom: 10px;
+}
+
+#nft-upload {
+  display: block;
+  margin: 10px auto 20px;
+  color: #fff;
+  background: #ff4fd8;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+
+#nft-upload:hover {
+  background: #ff82e4;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
+  justify-items: center;
+}
+
+.gallery-grid img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 2px solid #ff4fd840;
+  transition: all 0.3s;
+}
+
+.gallery-grid img:hover {
+  border-color: #ff4fd8;
+  box-shadow: 0 0 15px #ff4fd8;
+}
+
+/* Small screens */
+@media (max-width: 600px) {
+  .dashboard {
+    padding: 20px;
+  }
+  h1 {
+    font-size: 1.6em;
+  }
+  .stat {
+    padding: 10px;
+  }
+}
+
+/* Align title + logo */
+.gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* centers both horizontally */
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Smaller Magic Eden logo */
+.magic-eden-logo {
+  width: 15px;   /* make it smaller */
+  height: auto;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.magic-eden-logo:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 8px #ff4fd8);
+}
+
+.magic-eden-logo {
+  width: 15px;
+  height: 30px;
+}
+
+/* --- Project Description Block --- */
+.project-description {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: rgba(255, 79, 216, 0.08);
+  border: 1px solid rgba(255, 79, 216, 0.4);
+  border-radius: 12px;
+  padding: 14px 18px;
+  margin-top: 12px;
+  box-shadow: 0 0 12px rgba(255, 79, 216, 0.2);
+}
+
+.project-description p {
+  color: #ffbdf5;
+  font-family: 'Courier New', monospace;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.project-description strong {
+  color: #ff4fd8;
+}
+
+.project-logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px #ff4fd8);
+  border-radius: 50%;
+}
+
+/* === NFT Gallery Grid === */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 10px;
+  padding-bottom: 50px;
+}
+
+/* === NFT Card === */
+.nft-card {
+  background: rgba(255, 79, 216, 0.05);
+  border: 1px solid #ff4fd8;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.nft-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 12px #ff4fd8;
+  cursor: pointer;
+}
+
+.nft-img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.nft-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nft-name {
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  color: #ff4fd8;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.nft-price {
+  font-family: 'Courier New', monospace;
+  color: #ff9de5;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.view-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff4fd8, #9b00ff);
+  color: #fff !important; /* force text color */
+  font-weight: bold;
+  font-family: 'Courier New', monospace;
+  border: none;
+  border-radius: 16px;
+  padding: 10px 20px;
+  font-size: 0.9rem;
+  text-decoration: none; /* remove underline */
+  cursor: pointer;
+  box-shadow: 0 0 8px #ff4fd8, 0 0 16px #9b00ff55 inset;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.view-btn:hover {
+  background: linear-gradient(135deg, #ff9de5, #b400ff);
+  box-shadow: 0 0 12px #ff9de5, 0 0 24px #b400ff55 inset;
+  transform: translateY(-2px) scale(1.05);
+}
+
+.buy-hint {
+  text-align: center;
+  color: #ff4fd8;
+  font-size: 0.9rem;
+  margin-top: 6px;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.nft-card:hover .buy-hint {
+  opacity: 1;
+  transform: scale(1.05);
+  text-shadow: 0 0 8px #ff4fd8;
+}
+
+/* === Delete (X) button for NFTs === */
+.delete-x {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ff4fd8;
+  font-weight: bold;
+  font-size: 1rem;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 5;
+}
+
+.nft-card {
+  position: relative; /* make sure delete-x is positioned relative to card */
+}
+
+.nft-card:hover .delete-x {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.delete-x:hover {
+  background: #ff4fd8;
+  color: #fff;
+  transform: scale(1.2);
+  box-shadow: 0 0 8px #ff4fd8;
+}
+
+
+#Treasury {
+  color: #ff4fd8;
+  font-weight: bold;
+  text-decoration: none;
+  transition: text-shadow 0.2s ease, transform 0.2s ease;
+}
+
+#Treasury:hover {
+  text-shadow: 0 0 10px #ff4fd8;
+  transform: scale(1.05);
+}
+
+#gecko-frame {
+  transition: opacity 0.8s ease;
+}
+
+/* === Sold Gallery Styling === */
+.sold-gallery {
+  margin-top: 50px;
+  padding-top: 20px;
+  border-top: 1px solid #14F19540;
+}
+
+.sold-gallery h3 {
+  color: #14F195;
+  text-shadow: 0 0 8px #14F195;
+}
+
+.sold-gallery .nft-card {
+  background: rgba(20, 241, 149, 0.08);
+  border: 1px solid #14F19540;
+  box-shadow: 0 0 10px #14F19530;
+}
+
+.sold-gallery .nft-name {
+  color: #14F195;
+}
+
+.sold-gallery .nft-price {
+  color: #a8ffcf;
+}
+
+.sold-gallery .buy-hint {
+  color: #14F195;
+  font-size: 0.85em;
+  margin-top: 5px;
+}
+
+
+

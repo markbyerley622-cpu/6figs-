@@ -1,0 +1,165 @@
+script.js just in case 
+
+
+// === Configuration ===
+const SECRET_KEY = "RetardioDev123";
+
+// === DOM Elements ===
+const solPriceEl = document.getElementById("sol-price");
+const tokenPriceEl = document.getElementById("token-price");
+const marketCapEl = document.getElementById("market-cap");
+const burnedEl = document.getElementById("burned");
+const changeEl = document.getElementById("change");
+const nftCountEl = document.getElementById("nft-count");
+const holdingEl = document.getElementById("holding");
+const gallerySummary = document.getElementById("gallery-summary");
+const galleryGrid = document.getElementById("gallery-grid");
+const contractEl = document.getElementById("contract");
+
+// === Treasury Placeholder Values ===
+let nftCount = 0;
+
+// === Fetch SOL Price ===
+async function fetchSolPrice() {
+  try {
+    const res = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
+    );
+    const data = await res.json();
+    const solPrice = data.solana.usd;
+    solPriceEl.textContent = `$${solPrice.toFixed(2)}`;
+  } catch (err) {
+    console.error("SOL price fetch error:", err);
+    solPriceEl.textContent = "Error";
+  }
+}
+
+// === Update Placeholder Stats for empty state ===
+function updatePlaceholderStats() {
+  tokenPriceEl.textContent = "$0.0000";
+  marketCapEl.textContent = "$0.00M";
+  burnedEl.textContent = "0 (0.00%)";
+  changeEl.textContent = "-0.00%";
+  nftCountEl.textContent = `${nftCount}`;
+  holdingEl.textContent = `${nftCount} Retardios`;
+  gallerySummary.textContent = `RetardioStrategy™ is currently holding ${nftCount} NFTs`;
+}
+
+// === NFT Upload Handling ===
+const unlockBtn = document.getElementById("u1");
+const nftUpload = document.getElementById("nft-upload");
+
+unlockBtn.addEventListener("click", () => {
+  const key = prompt("Enter dev key:");
+  if (key === SECRET_KEY) {
+    nftUpload.style.display = "block";
+    unlockBtn.style.display = "none";
+    alert("Uploader unlocked! You can now add NFTs.");
+  } else alert("Wrong key!");
+});
+
+nftUpload.addEventListener("change", (event) => {
+  const files = Array.from(event.target.files);
+  files.forEach((file) => {
+    const nftNumber = prompt("Enter NFT number / identifier:");
+    const listingPrice = parseFloat(prompt("Enter NFT listing price in SOL:"));
+    const nftLink = prompt("Enter NFT listing URL (optional):");
+
+    if (isNaN(listingPrice) || listingPrice < 0) {
+      alert("Invalid price! Skipping this NFT.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const nftCard = document.createElement("div");
+      nftCard.className = "nft-card";
+      nftCard.innerHTML = `
+        <img src="${e.target.result}" />
+        <div class="nft-info">
+          <p><strong>ID:</strong> ${nftNumber}</p>
+          <p><strong>Listing Price:</strong> ${listingPrice.toFixed(3)} SOL</p>
+          ${nftLink ? `<p><a href="${nftLink}" target="_blank">View Listing</a></p>` : ""}
+        </div>
+      `;
+      galleryGrid.appendChild(nftCard);
+      nftCount++;
+      nftCountEl.textContent = nftCount;
+      holdingEl.textContent = `${nftCount} Retardios`;
+      gallerySummary.textContent = `RetardioStrategy™ is currently holding ${nftCount} NFTs`;
+    };
+    reader.readAsDataURL(file);
+  });
+  nftUpload.value = "";
+});
+
+// === Token Loader ===
+const unlockTokenLoaderBtn = document.getElementById("pa");
+const tokenLoaderDiv = document.getElementById("token-loader");
+const contractInput = document.getElementById("token-contract");
+const loadTokenBtn = document.getElementById("load-token");
+
+unlockTokenLoaderBtn.addEventListener("click", () => {
+  const key = prompt("Enter dev key:");
+  if (key === SECRET_KEY) {
+    tokenLoaderDiv.style.display = "block";
+    unlockTokenLoaderBtn.style.display = "none";
+    alert("Token loader unlocked! You can now paste DexScreener pair slugs.");
+  } else alert("Wrong key!");
+});
+
+// === Fetch DexScreener + Update All Stats ===
+async function updateStats(pairSlug) {
+  try {
+    // Fetch SOL price
+    await fetchSolPrice();
+
+    // Fetch DexScreener data from server proxy
+    const res = await fetch(`/dex/${pairSlug}`);
+    const data = await res.json();
+
+    if (!data.pairs || data.pairs.length === 0) throw new Error("Pair not found");
+    const pair = data.pairs[0];
+
+    // Update dashboard stats
+    tokenPriceEl.textContent = `$${parseFloat(pair.priceUsd).toFixed(6)}`;
+    marketCapEl.textContent = `$${(parseFloat(pair.liquidity.usd) / 1_000_000).toFixed(2)}M`;
+    changeEl.textContent = `${parseFloat(pair.priceChange.h24).toFixed(2)}%`;
+
+    // Update placeholders
+    holdingEl.textContent = `${nftCount} Retardios`;
+    burnedEl.textContent = `0 (0.00%)`;
+
+    // Update chart iframe
+    document.getElementById("tradingview-chart").innerHTML = `
+      <iframe 
+        src="https://dexscreener.com/solana/${pairSlug}?embed=1&theme=dark" 
+        width="100%" 
+        height="500" 
+        style="border:none;"
+        allowfullscreen>
+      </iframe>
+    `;
+
+    // Update contract display
+    contractEl.textContent = pairSlug;
+  } catch (err) {
+    console.error("Error updating stats:", err);
+    alert("Error updating stats: " + err);
+  }
+}
+
+// === Load Token Button ===
+loadTokenBtn.addEventListener("click", async () => {
+  const pairSlug = contractInput.value.trim();
+  if (!pairSlug) return alert("Enter a DexScreener pair slug!");
+  await updateStats(pairSlug);
+});
+
+// === Dashboard Init ===
+document.addEventListener("DOMContentLoaded", () => {
+  updatePlaceholderStats();
+  fetchSolPrice();
+  setInterval(fetchSolPrice, 15000); // refresh SOL price every 15s
+});
+
