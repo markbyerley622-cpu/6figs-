@@ -14,6 +14,68 @@ const contractEl = document.getElementById("contract");
 window.devUnlocked = false; // global flag to check if dev mode is unlocked
 
 
+// === Load Global Server State (instead of localStorage) ===
+async function loadGlobalState() {
+  try {
+    const res = await fetch("/state");
+    const state = await res.json();
+
+    // 🪙 Contract Address
+    if (state.contractAddress) {
+      document.getElementById("contract").textContent = state.contractAddress;
+    }
+
+    // 🔥 Burn %
+    if (state.burnPercent) {
+      document.getElementById("burned-percent").textContent = `${state.burnPercent}% 🔥`;
+    }
+
+    // 🎯 Next NFT Goal
+    if (state.nextPurchase) {
+      const next = state.nextPurchase;
+      const container = document.getElementById("next-nft-preview");
+      if (container) {
+        container.innerHTML = `
+          <div class="nft-card" onclick="window.open('${next.link}', '_blank')">
+            <img src="${next.image}" alt="${next.name}" class="nft-img">
+            <div class="nft-info">
+              <p class="nft-name">${next.name}</p>
+              <p class="nft-price">${next.price} SOL</p>
+            </div>
+          </div>
+        `;
+      }
+      window.nextPurchasePrice = next.price;
+      updateProgress();
+    }
+  } catch (err) {
+    console.warn("⚠️ Could not load global state:", err);
+  }
+}
+
+// === GLOBAL CONFETTI CHECKER ===
+let globalConfettiShown = false;
+
+async function checkGlobalConfetti() {
+  try {
+    const res = await fetch("/state.json?_=" + Date.now());
+    const state = await res.json();
+
+    if (state.confetti && !globalConfettiShown) {
+      globalConfettiShown = true;
+      console.log("🎉 Global confetti triggered!");
+      launchConfetti();
+      setTimeout(() => (globalConfettiShown = false), 15000); // reset flag after 15s
+    }
+  } catch (err) {
+    console.error("Confetti check failed:", err);
+  }
+}
+
+// Check every 5 seconds
+setInterval(checkGlobalConfetti, 5000);
+
+
 // === Treasury Placeholder Values ===
 let nftCount = 0;
 
@@ -131,8 +193,17 @@ loadTokenBtn.addEventListener("click", async () => {
   const contractEl = document.getElementById("contract");
   contractEl.textContent = poolId;
 
-  // ✅ Optionally store in localStorage (so it remembers last one)
-  localStorage.setItem("lastPoolId", poolId);
+// ✅ Save globally for all users
+if (window.devUnlocked) {
+  await fetch("/update-state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      key: localStorage.getItem("devKey"),
+      updates: { contractAddress: poolId }
+    })
+  });
+}
 
   // ✅ Load stats
   await updateStats(poolId);
@@ -364,6 +435,26 @@ document.addEventListener("DOMContentLoaded", () => {
         alert(`Next purchase goal set to ${price} SOL`);
       };
 
+// ✅ Save the new next purchase goal to the global server state
+if (window.devUnlocked) {
+  fetch("/update-state", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      key: localStorage.getItem("devKey"),
+      updates: {
+        nextPurchase: {
+          name,
+          price,
+          link,
+          image: e.target.result
+        }
+      }
+    })
+  });
+}
+
+
       // ✅ read the file after defining onload
       reader.readAsDataURL(file);
       fileInput.value = "";
@@ -471,9 +562,33 @@ async function updateProgress() {
 
     // 🎉 Trigger confetti celebration for 10 seconds
     launchConfetti();
+
+
+// 🌍 Tell the server to trigger global confetti
+fetch("/update-state", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    key: localStorage.getItem("devKey"),
+    updates: { confetti: true }
+  })
+});
+
+
     const confettiDuration = 10000; // 10s
     setTimeout(() => {
       window.confettiActive = false;
+
+// 🌍 Reset global confetti flag
+fetch("/update-state", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    key: localStorage.getItem("devKey"),
+    updates: { confetti: false }
+  })
+});
+
 
       // 🧹 Reset everything
       progressFill.style.width = "0%";
@@ -533,21 +648,19 @@ window.setNextPurchasePrice = function (price) {
 
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   updatePlaceholderStats();
   fetchSolPrice();
   setInterval(fetchSolPrice, 15000); // refresh SOL price every 15s
 
-  // start progress updater
-  updateProgress();
-  setInterval(updateProgress, 15000); // refresh progress every 15s
+  // Load server-wide state
+  await loadGlobalState();
 
+  // Start progress tracker
+  updateProgress();
+  setInterval(updateProgress, 15000);
+
+  // Load galleries
   loadGallery();
   loadSoldGallery();
-
-  // === Auto-load saved Burn % on page load ===
-  const savedBurn = localStorage.getItem("burnPercent");
-  if (savedBurn !== null) {
-    document.getElementById("burned-percent").textContent = `${savedBurn}% 🔥`;
-  }
 });

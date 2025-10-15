@@ -26,6 +26,10 @@ const GALLERY_FILE = path.join(__dirname, "gallery.json");
 const SOLD_FILE = path.join(__dirname, "sold.json");
 const CHART_FILE = path.join(__dirname, "chart.json");
 
+const STATE_FILE = path.join(__dirname, "state.json");
+if (!fs.existsSync(STATE_FILE)) fs.writeFileSync(STATE_FILE, JSON.stringify({}, null, 2));
+
+
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 if (!fs.existsSync(GALLERY_FILE)) fs.writeFileSync(GALLERY_FILE, "[]");
 if (!fs.existsSync(SOLD_FILE)) fs.writeFileSync(SOLD_FILE, "[]");
@@ -50,6 +54,38 @@ app.get("/chart", (req, res) => {
     res.json({ address: "So11111111111111111111111111111111111111112" });
   }
 });
+
+
+// === Global State Get ===
+app.get("/state", (req, res) => {
+  try {
+    const state = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"));
+    res.json(state);
+  } catch {
+    res.json({});
+  }
+});
+
+// === Global State Update ===
+app.post("/update-state", (req, res) => {
+  const { key, updates } = req.body;
+  if (key !== DEV_KEY) return res.status(403).json({ error: "Access denied" });
+
+  try {
+    const state = fs.existsSync(STATE_FILE)
+      ? JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"))
+      : {};
+
+    const newState = { ...state, ...updates };
+    fs.writeFileSync(STATE_FILE, JSON.stringify(newState, null, 2));
+
+    res.json({ success: true, state: newState });
+  } catch (err) {
+    console.error("❌ Update State Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 app.post("/update-chart", (req, res) => {
   const { key, address } = req.body;

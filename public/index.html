@@ -278,7 +278,7 @@ document.getElementById("u1").addEventListener("click", () => {
   });
 
 // === BA (Burn Amount - Set Burned % Display) ===
-document.getElementById("ba").addEventListener("click", () => {
+document.getElementById("ba").addEventListener("click", async () => {
   if (!devUnlocked) return alert("🚫 Developer mode required.");
 
   // Ask the dev for a burn % (number only)
@@ -291,13 +291,27 @@ document.getElementById("ba").addEventListener("click", () => {
     return;
   }
 
-  // Save locally so it persists between reloads
-  localStorage.setItem("burnPercent", percent);
-
   // Update UI immediately
   document.getElementById("burned-percent").textContent = `${percent}% 🔥`;
 
   alert(`🔥 Burn percentage updated to ${percent}%`);
+
+  // ✅ Save globally on the server so everyone sees the same burn %
+  try {
+    const res = await fetch("/update-state", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        key: localStorage.getItem("devKey"),
+        updates: { burnPercent: percent }
+      })
+    });
+
+    const data = await res.json();
+    if (!data.success) console.warn("⚠️ Burn update failed:", data);
+  } catch (err) {
+    console.error("❌ Error updating global burn percent:", err);
+  }
 });
 
 
