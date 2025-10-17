@@ -6,9 +6,23 @@ const multer = require("multer");
 const session = require("express-session");
 require("dotenv").config();
 
+const http = require("http");
+const { Server } = require("socket.io");
+
+
 const app = express();
 app.use(express.json());
 app.use(express.static("public"));
+
+
+// ✅ Serve Socket.IO client script (important for direct hosting)
+app.use(
+  "/socket.io",
+  express.static(path.join(__dirname, "node_modules", "socket.io", "client-dist"))
+);
+
+const server = http.createServer(app);
+const io = new Server(server);
 
 // === Session setup ===
 app.use(
@@ -79,6 +93,9 @@ app.post("/update-state", (req, res) => {
     const newState = { ...state, ...updates };
     fs.writeFileSync(STATE_FILE, JSON.stringify(newState, null, 2));
 
+// ✅ Add this line
+io.emit("stateUpdated", newState);
+
     res.json({ success: true, state: newState });
   } catch (err) {
     console.error("❌ Update State Error:", err);
@@ -141,6 +158,10 @@ app.post("/upload-gallery", upload.array("images"), (req, res) => {
     });
 
     fs.writeFileSync(GALLERY_FILE, JSON.stringify(gallery, null, 2));
+
+// ✅ Broadcast globally
+io.emit("galleryUpdated");
+
     res.json({ success: true });
   } catch (err) {
     console.error("❌ Upload Gallery Error:", err);
@@ -228,6 +249,10 @@ app.post("/delete-gallery", (req, res) => {
 
     // Save updated gallery
     fs.writeFileSync(GALLERY_FILE, JSON.stringify(gallery, null, 2));
+
+// ✅ Notify everyone
+io.emit("galleryUpdated");
+
     console.log(`✅ Deleted NFT: ${target.name || "(unnamed)"}`);
     res.json({ success: true });
   } catch (err) {
@@ -237,29 +262,6 @@ app.post("/delete-gallery", (req, res) => {
 });
 
 
-// === Move NFT to Sold ===
-app.post("/move-to-sold", (req, res) => {
-  const { key, name, soldPrice } = req.body;
-  if (key !== DEV_KEY) return res.status(403).json({ error: "Access denied" });
-
-  try {
-    const gallery = JSON.parse(fs.readFileSync(GALLERY_FILE, "utf-8"));
-    const solds = JSON.parse(fs.readFileSync(SOLD_FILE, "utf-8"));
-    const nft = gallery.find((n) => n.name === name);
-    if (!nft) return res.status(404).json({ success: false });
-
-    const moved = { ...nft, price: soldPrice, soldDate: new Date().toISOString() };
-    solds.push(moved);
-
-    const updatedGallery = gallery.filter((n) => n.name !== name);
-    fs.writeFileSync(GALLERY_FILE, JSON.stringify(updatedGallery, null, 2));
-    fs.writeFileSync(SOLD_FILE, JSON.stringify(solds, null, 2));
-    res.json({ success: true });
-  } catch (err) {
-    console.error("❌ Move to Sold Error:", err);
-    res.status(500).json({ success: false });
-  }
-});
 
 // === Sold NFTs ===
 app.get("/sold", (req, res) => {
@@ -290,6 +292,10 @@ app.post("/upload-sold", upload.array("images"), (req, res) => {
     });
 
     fs.writeFileSync(SOLD_FILE, JSON.stringify(solds, null, 2));
+
+// ✅ Broadcast globally
+io.emit("soldUpdated");
+
     res.json({ success: true });
   } catch (err) {
     console.error("❌ Upload Sold Error:", err);
@@ -312,6 +318,10 @@ app.post("/delete-sold", (req, res) => {
     );
 
     fs.writeFileSync(SOLD_FILE, JSON.stringify(updated, null, 2));
+
+// ✅ Broadcast globally
+io.emit("soldUpdated");
+
     res.json({ success: true });
   } catch (err) {
     console.error("❌ Delete Sold Error:", err);
@@ -319,8 +329,25 @@ app.post("/delete-sold", (req, res) => {
   }
 });
 
+io.on("connection", (socket) => {
+  console.log("🌐 New client connected:", socket.id);
+
+  // Send current state immediately
+  try {
+    const state = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"));
+    socket.emit("stateUpdated", state);
+  } catch {
+    socket.emit("stateUpdated", {});
+  }
+
+  socket.on("disconnect", () => {
+    console.log("❌ Client disconnected:", socket.id);
+  });
+});
+
+
 
 // === Start Server ===
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server running with WebSocket on port ${PORT}`));
 

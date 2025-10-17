@@ -11,6 +11,63 @@ const gallerySummary = document.getElementById("gallery-summary");
 const galleryGrid = document.getElementById("gallery-grid");
 const contractEl = document.getElementById("contract");
 
+
+// === GLOBAL SOCKET.IO SYNC ===
+const socket = io();
+
+// 🔁 Live gallery refresh
+socket.on("galleryUpdated", () => {
+  console.log("🖼️ Gallery updated globally — refreshing...");
+  loadGallery();
+});
+
+// 🔁 Live sold gallery refresh
+socket.on("soldUpdated", () => {
+  console.log("💸 Sold gallery updated globally — refreshing...");
+  loadSoldGallery();
+});
+
+// 🔁 Live state sync (burn %, contract, next purchase, confetti)
+socket.on("stateUpdated", (state) => {
+  console.log("🌍 Global state updated:", state);
+
+  // 🪙 Contract Address
+  if (state.contractAddress) {
+    document.getElementById("contract").textContent = state.contractAddress;
+  }
+
+  // 🔥 Burn Percent
+  if (state.burnPercent !== undefined) {
+    document.getElementById("burned-percent").textContent = `${state.burnPercent}% 🔥`;
+  }
+
+  // 🎯 Next NFT goal
+  if (state.nextPurchase) {
+    const next = state.nextPurchase;
+    const container = document.getElementById("next-nft-preview");
+    if (container) {
+      container.innerHTML = `
+        <div class="nft-card" onclick="window.open('${next.link}', '_blank')">
+          <img src="${next.image}" alt="${next.name}" class="nft-img">
+          <div class="nft-info">
+            <p class="nft-name">${next.name}</p>
+            <p class="nft-price">${next.price} SOL</p>
+          </div>
+        </div>
+      `;
+    }
+    window.nextPurchasePrice = next.price;
+    updateProgress();
+  }
+
+  // 🎉 Confetti trigger (no more polling)
+  if (state.confetti) {
+    console.log("🎉 Global confetti ON");
+    launchConfetti();
+  }
+});
+
+
 window.devUnlocked = false; // global flag to check if dev mode is unlocked
 
 
@@ -53,27 +110,7 @@ async function loadGlobalState() {
   }
 }
 
-// === GLOBAL CONFETTI CHECKER ===
-let globalConfettiShown = false;
 
-async function checkGlobalConfetti() {
-  try {
-    const res = await fetch("/state.json?_=" + Date.now());
-    const state = await res.json();
-
-    if (state.confetti && !globalConfettiShown) {
-      globalConfettiShown = true;
-      console.log("🎉 Global confetti triggered!");
-      launchConfetti();
-      setTimeout(() => (globalConfettiShown = false), 15000); // reset flag after 15s
-    }
-  } catch (err) {
-    console.error("Confetti check failed:", err);
-  }
-}
-
-// Check every 5 seconds
-setInterval(checkGlobalConfetti, 5000);
 
 
 // === Treasury Placeholder Values ===
