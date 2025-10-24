@@ -52,6 +52,7 @@
       <div class="stat"><span class="label">Holding</span><span id="holding">0 Retardios</span></div>
       <div class="stat"><span class="label">SOL Price</span><span id="sol-price">$0.00</span></div>
       <div class="stat"><span class="label">$RTSTRDGY Price</span><span id="token-price">$0.0000</span></div>
+      <div class="stat"><span class="label">Market Cap</span><span id="real-market-cap">$0.00M</span></div>
       <div class="stat"><span class="label">Liquidity</span><span id="market-cap">$0.00M</span></div>
       <div class="stat"><span class="label">24h Change</span><span id="change">-0.00%</span></div>
     </div>
@@ -204,8 +205,14 @@ window.addEventListener("keydown", async (e) => {
 
       if (data.valid) {
         devUnlocked = true;
+        window.devUnlocked = true; // ✅ Sync with window global
+        localStorage.setItem("devKey", key); // ✅ Save for API calls
         document.getElementById("dev-panel").style.display = "flex";
         alert("Developer mode unlocked 🔓");
+
+        // ✅ Reload galleries to show delete buttons
+        if (typeof loadGallery === "function") loadGallery();
+        if (typeof loadSoldGallery === "function") loadSoldGallery();
       } else {
         alert("Access denied 🚫");
       }

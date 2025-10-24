@@ -41,6 +41,28 @@ socket.on("stateUpdated", (state) => {
     document.getElementById("burned-percent").textContent = `${state.burnPercent}% 🔥`;
   }
 
+  // 💰 Token Stats (update globally when received)
+  if (state.tokenStats) {
+    const { price, liquidity, change24h, marketCap } = state.tokenStats;
+
+    const tokenPriceEl = document.getElementById("token-price");
+    const liquidityEl = document.getElementById("market-cap");
+    const marketCapEl = document.getElementById("real-market-cap");
+    const changeEl = document.getElementById("change");
+
+    if (tokenPriceEl && price !== undefined)
+      tokenPriceEl.textContent = `$${Number(price).toFixed(6)}`;
+
+    if (liquidityEl && liquidity !== undefined)
+      liquidityEl.textContent = `$${Number(liquidity).toFixed(2)}M`;
+
+    if (marketCapEl && marketCap !== undefined)
+      marketCapEl.textContent = `$${Number(marketCap).toFixed(2)}M`;
+
+    if (changeEl && change24h !== undefined)
+      changeEl.textContent = `${Number(change24h).toFixed(2)}%`;
+  }
+
   // 🎯 Next NFT goal
   if (state.nextPurchase) {
     const next = state.nextPurchase;
@@ -68,8 +90,40 @@ socket.on("stateUpdated", (state) => {
 });
 
 
+
 window.devUnlocked = false; // global flag to check if dev mode is unlocked
 
+
+// === Global Confetti Trigger ===
+function launchConfetti() {
+  if (window.confettiActive) return; // prevent spam
+  window.confettiActive = true;
+
+  // Simple confetti burst using canvas-confetti (if included)
+  if (window.confetti) {
+    const duration = 5 * 1000;
+    const end = Date.now() + duration;
+
+    (function frame() {
+      window.confetti({
+        particleCount: 5,
+        angle: 60,
+        spread: 55,
+        origin: { x: 0 },
+      });
+      window.confetti({
+        particleCount: 5,
+        angle: 120,
+        spread: 55,
+        origin: { x: 1 },
+      });
+      if (Date.now() < end) requestAnimationFrame(frame);
+      else window.confettiActive = false;
+    })();
+  } else {
+    console.warn("🎉 Confetti function not found (missing library)");
+  }
+}
 
 // === Load Global Server State (instead of localStorage) ===
 async function loadGlobalState() {
@@ -85,6 +139,28 @@ async function loadGlobalState() {
     // 🔥 Burn %
     if (state.burnPercent) {
       document.getElementById("burned-percent").textContent = `${state.burnPercent}% 🔥`;
+    }
+
+    // 💰 Token Stats (persisted globally)
+    if (state.tokenStats) {
+      const { price, liquidity, change24h, marketCap } = state.tokenStats;
+
+      const tokenPriceEl = document.getElementById("token-price");
+      const liquidityEl = document.getElementById("market-cap");
+      const marketCapEl = document.getElementById("real-market-cap");
+      const changeEl = document.getElementById("change");
+
+      if (tokenPriceEl && price !== undefined)
+        tokenPriceEl.textContent = `$${Number(price).toFixed(6)}`;
+
+      if (liquidityEl && liquidity !== undefined)
+        liquidityEl.textContent = `$${Number(liquidity).toFixed(2)}M`;
+
+      if (marketCapEl && marketCap !== undefined)
+        marketCapEl.textContent = `$${Number(marketCap).toFixed(2)}M`;
+
+      if (changeEl && change24h !== undefined)
+        changeEl.textContent = `${Number(change24h).toFixed(2)}%`;
     }
 
     // 🎯 Next NFT Goal
@@ -105,36 +181,44 @@ async function loadGlobalState() {
       window.nextPurchasePrice = next.price;
       updateProgress();
     }
+
   } catch (err) {
     console.warn("⚠️ Could not load global state:", err);
   }
 }
 
 
-
-
 // === Treasury Placeholder Values ===
 let nftCount = 0;
+
 
 // === Fetch SOL Price ===
 async function fetchSolPrice() {
   try {
-    const res = await fetch(
-      "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd"
-    );
+    // Get SOL price from backend
+    const res = await fetch("/sol-price");
     const data = await res.json();
     const solPrice = data.solana.usd;
+
+    // Update the UI
     solPriceEl.textContent = `$${solPrice.toFixed(2)}`;
+
   } catch (err) {
-    console.error("SOL price fetch error:", err);
+    console.error("❌ SOL price fetch error:", err);
     solPriceEl.textContent = "Error";
   }
 }
+
+// 🧠 Auto-run this when the page loads
+fetchSolPrice();
+
+
 
 // === Update Placeholder Stats for empty state ===
 function updatePlaceholderStats() {
   tokenPriceEl.textContent = "$0.0000";
   marketCapEl.textContent = "$0.00M";
+  document.getElementById("real-market-cap").textContent = "$0.00M";
   changeEl.textContent = "-0.00%";
   nftCountEl.textContent = `${nftCount}`;
   holdingEl.textContent = `${nftCount} Retardios`;
@@ -167,6 +251,11 @@ unlockTokenLoaderBtn.addEventListener("click", async () => {
       unlockTokenLoaderBtn.style.display = "none";
       alert("Token loader unlocked! Paste a GeckoTerminal pool ID or contract.");
       window.devUnlocked = true; // ✅ same global flag
+      localStorage.setItem("devKey", key);
+
+      // ✅ Reload galleries to show delete buttons immediately
+      loadGallery();
+      loadSoldGallery();
     } else {
       alert("Wrong key!");
     }
@@ -193,12 +282,18 @@ async function updateStats(poolId) {
     const priceUsd = parseFloat(attr.base_token_price_usd) || 0;
     const change = parseFloat(attr.price_change_percentage.h24) || 0;
     const liquidity = parseFloat(attr.reserve_in_usd) || 0;
+    const fdvUsd = parseFloat(attr.fdv_usd) || 0; // Fully diluted valuation (price × total supply)
+    const marketCapUsd = fdvUsd || parseFloat(attr.market_cap_usd) || 0; // Prefer FDV which is price × supply
 
     // ✅ Update UI elements
     document.getElementById("token-price").textContent = `$${priceUsd.toFixed(6)}`;
     document.getElementById("market-cap").textContent = `$${(liquidity / 1_000_000).toFixed(2)}M`;
+    document.getElementById("real-market-cap").textContent = `$${(marketCapUsd / 1_000_000).toFixed(2)}M`;
     document.getElementById("change").textContent = `${change.toFixed(2)}%`;
-    document.getElementById("holding").textContent = `${nftCount} Retardios`;
+
+    // Get current NFT count from gallery
+    const galleryCount = document.querySelectorAll("#gallery-grid .nft-card").length;
+    document.getElementById("holding").textContent = `${galleryCount} Retardio${galleryCount !== 1 ? "s" : ""}`;
 
     // ✅ Update the live GeckoTerminal iframe (without rebuilding it)
     const geckoFrame = document.getElementById("gecko-frame");
@@ -212,6 +307,26 @@ async function updateStats(poolId) {
           geckoFrame.style.opacity = "1";
         };
       }, 300);
+    }
+
+    // ✅ Save stats globally for all users
+    if (window.devUnlocked) {
+      await fetch("/update-state", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          key: localStorage.getItem("devKey"),
+          updates: {
+            tokenStats: {
+              price: priceUsd,
+              liquidity: liquidity / 1_000_000,
+              marketCap: marketCapUsd / 1_000_000,
+              change24h: change
+            }
+          }
+        })
+      });
+      console.log("✅ Token stats saved globally");
     }
 
   } catch (err) {
@@ -240,6 +355,7 @@ if (window.devUnlocked) {
       updates: { contractAddress: poolId }
     })
   });
+  console.log("✅ Contract address saved globally");
 }
 
   // ✅ Load stats
@@ -331,21 +447,12 @@ async function loadGallery() {
     // === ✅ Update stats ===
     const currentCount = data.length;
 
-    // Get the stored all-time count (defaults to 0)
-    let allTimeCount = parseInt(localStorage.getItem("allTimeHeld") || "0");
-
-    // If treasury currently holds more than we've ever seen, update record
-    if (currentCount > allTimeCount) {
-      allTimeCount = currentCount;
-      localStorage.setItem("allTimeHeld", allTimeCount);
-    }
-
-    // Update UI
+    // Update UI with current count (not all-time)
     document.getElementById("gallery-summary").textContent =
       `RetardioStrategy™ is currently holding ${currentCount} NFT${currentCount !== 1 ? "s" : ""}`;
     document.getElementById("holding").textContent =
       `${currentCount} Retardio${currentCount !== 1 ? "s" : ""}`;
-    document.getElementById("nft-count").textContent = allTimeCount;
+    document.getElementById("nft-count").textContent = currentCount;
 
   } catch (err) {
     console.warn("loadGallery failed:", err);
@@ -405,10 +512,8 @@ async function loadSoldGallery() {
             return;
           }
 
-          card.remove();
-          const remaining = document.querySelectorAll("#sold-grid .nft-card").length;
-          document.getElementById("sold-summary").textContent =
-            `RetardioStrategy™ has sold ${remaining} NFTs`;
+          alert("✅ Sold NFT deleted");
+          loadSoldGallery(); // ✅ Reload gallery to sync state
         });
 
         card.appendChild(deleteX);
@@ -430,10 +535,14 @@ async function loadSoldGallery() {
 
 //np
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("np").addEventListener("click", () => {
-    if (!devUnlocked) return alert("🚫 Developer mode required.");
+  const npBtn = document.getElementById("np");
+  const fileInput = document.getElementById("next-nft-upload");
 
-    const fileInput = document.getElementById("next-nft-upload");
+  if (!npBtn || !fileInput) return console.error("Missing #np or #next-nft-upload element!");
+
+  npBtn.addEventListener("click", () => {
+    if (!window.devUnlocked) return alert("🚫 Developer mode required.");
+
     fileInput.click();
 
     fileInput.onchange = async () => {
@@ -446,16 +555,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (isNaN(price) || price <= 0) return alert("❌ Invalid price!");
 
-      // ✅ define the FileReader here
       const reader = new FileReader();
 
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
+        const imageData = e.target.result;
+
         const nextNFTContainer = document.getElementById("next-nft-preview");
         if (!nextNFTContainer) return alert("⚠️ next-nft-preview not found in DOM!");
 
+        // 🖼️ Update preview instantly
         nextNFTContainer.innerHTML = `
           <div class="nft-card" onclick="window.open('${link}', '_blank')">
-            <img src="${e.target.result}" alt="${name}" class="nft-img">
+            <img src="${imageData}" alt="${name}" class="nft-img">
             <div class="nft-info">
               <p class="nft-name">${name}</p>
               <p class="nft-price">${price.toFixed(2)} SOL</p>
@@ -463,41 +574,44 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
 
-        if (typeof window.setNextPurchasePrice === "function") {
-          window.setNextPurchasePrice(price);
-        } else {
-          window.nextPurchasePrice = price;
-        }
+        // 💾 Update progress vars
+        window.nextPurchasePrice = price;
 
         alert(`Next purchase goal set to ${price} SOL`);
+
+        // ✅ Save to global server state (AFTER reader finished)
+        if (window.devUnlocked) {
+          try {
+            const res = await fetch("/update-state", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                key: localStorage.getItem("devKey"),
+                updates: {
+                  nextPurchase: {
+                    name,
+                    price,
+                    link,
+                    image: imageData, // ✅ correct — fully loaded image
+                  },
+                },
+              }),
+            });
+
+            const result = await res.json();
+            console.log("✅ nextPurchase saved:", result);
+          } catch (err) {
+            console.error("❌ Failed to save nextPurchase:", err);
+          }
+        }
       };
 
-// ✅ Save the new next purchase goal to the global server state
-if (window.devUnlocked) {
-  fetch("/update-state", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      key: localStorage.getItem("devKey"),
-      updates: {
-        nextPurchase: {
-          name,
-          price,
-          link,
-          image: e.target.result
-        }
-      }
-    })
-  });
-}
-
-
-      // ✅ read the file after defining onload
+      // ⏩ Start reading the file
       reader.readAsDataURL(file);
-      fileInput.value = "";
     };
   });
 });
+
 
 
 // === Sold Gallery Elements ===
@@ -627,6 +741,8 @@ fetch("/update-state", {
 });
 
 
+
+
       // 🧹 Reset everything
       progressFill.style.width = "0%";
       progressPercent.textContent = "0%";
@@ -685,19 +801,42 @@ window.setNextPurchasePrice = function (price) {
 
 
 
+
+
+socket.on("chartUpdated", ({ address }) => {
+  console.log("📊 Chart updated globally:", address);
+  const chartFrame = document.getElementById("gecko-frame");
+  if (chartFrame) {
+    chartFrame.src = `https://www.geckoterminal.com/solana/pools/${address}?embed=1&theme=dark`;
+  }
+  // Also update the contract address display at top
+  const contractEl = document.getElementById("contract");
+  if (contractEl) {
+    contractEl.textContent = address;
+  }
+});
+
+
+
+// === Expose functions globally (for debugging or reuse) ===
+window.loadGallery = loadGallery;
+window.loadSoldGallery = loadSoldGallery;
+window.loadGlobalState = loadGlobalState;
+window.updateProgress = updateProgress;
+window.updateStats = updateStats;
+window.launchConfetti = launchConfetti;
+
+
 document.addEventListener("DOMContentLoaded", async () => {
   updatePlaceholderStats();
-  fetchSolPrice();
-  setInterval(fetchSolPrice, 15000); // refresh SOL price every 15s
-
-  // Load server-wide state
-  await loadGlobalState();
-
-  // Start progress tracker
-  updateProgress();
-  setInterval(updateProgress, 15000);
-
-  // Load galleries
+  await loadGlobalState(); // 🧠 load state first
+  await fetchSolPrice();
   loadGallery();
   loadSoldGallery();
+  updateProgress();
+
+
+
+  setInterval(fetchSolPrice, 15000);
+  setInterval(updateProgress, 15000);
 });

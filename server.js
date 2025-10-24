@@ -1,18 +1,34 @@
+let fetch;
+try {
+  // Prefer native fetch if available
+  fetch = global.fetch || ((...args) => import('node-fetch').then(({ default: f }) => f(...args)));
+} catch {
+  // Fallback for environments without global.fetch
+  fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+}
+
+
+
+
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const fetch = require("node-fetch");
 const multer = require("multer");
 const session = require("express-session");
 require("dotenv").config();
+const cors = require("cors");
 
 const http = require("http");
 const { Server } = require("socket.io");
 
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "50mb" })); // ✅ increase payload size limit for base64 images
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(express.static("public"));
+app.use(cors());
+
+
 
 
 // ✅ Serve Socket.IO client script (important for direct hosting)
@@ -90,11 +106,32 @@ app.post("/update-state", (req, res) => {
       ? JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"))
       : {};
 
-    const newState = { ...state, ...updates };
+    // 🧠 Merge deeply to retain old values
+const newState = structuredClone(state);
+
+for (const key in updates) {
+  if (typeof updates[key] === "object" && !Array.isArray(updates[key])) {
+    newState[key] = { ...(state[key] || {}), ...updates[key] };
+  } else {
+    newState[key] = updates[key];
+  }
+}
+
     fs.writeFileSync(STATE_FILE, JSON.stringify(newState, null, 2));
 
-// ✅ Add this line
-io.emit("stateUpdated", newState);
+    // 🧩 Keep chart.json synced with contract address
+    if (updates.contractAddress) {
+      fs.writeFileSync(
+        CHART_FILE,
+        JSON.stringify({ address: updates.contractAddress }, null, 2)
+      );
+    }
+
+    // ✅ Broadcast globally to all clients
+    io.emit("stateUpdated", newState);
+
+    // Also broadcast chart change (for iframe reloads)
+    if (updates.contractAddress) io.emit("chartUpdated", { address: updates.contractAddress });
 
     res.json({ success: true, state: newState });
   } catch (err) {
@@ -103,25 +140,6 @@ io.emit("stateUpdated", newState);
   }
 });
 
-
-app.post("/update-chart", (req, res) => {
-  const { key, address } = req.body;
-  if (key !== DEV_KEY) return res.status(403).json({ error: "Access denied" });
-  fs.writeFileSync(CHART_FILE, JSON.stringify({ address }, null, 2));
-  res.json({ success: true });
-});
-
-// === Dex Proxy ===
-app.get("/dex/:pair", async (req, res) => {
-  const pair = req.params.pair;
-  try {
-    const r = await fetch(`https://api.dexscreener.com/latest/dex/pairs/solana/${pair}`);
-    if (!r.ok) throw new Error("Dex API error");
-    res.json(await r.json());
-  } catch (err) {
-    res.status(500).json({ error: "Dex fetch failed", details: err.message });
-  }
-});
 
 // === Upload Gallery ===
 app.post("/upload-gallery", upload.array("images"), (req, res) => {
@@ -170,32 +188,25 @@ io.emit("galleryUpdated");
 });
 
 app.post("/verify-dev", (req, res) => {
-  // 🧠 Skip re-check if already unlocked this session
-  if (req.session?.devUnlocked) {
-    console.log("[verify-dev] 🔁 Already unlocked for this session — skipping key check");
-    return res.json({ valid: true });
-  }
-
   const { key } = req.body;
-  console.log("[verify-dev] received key:", JSON.stringify(key));
-  console.log("[verify-dev] DEV_KEY loaded:", typeof DEV_KEY === "undefined" ? "MISSING" : "LOADED");
-
   const k = (key || "").toString().trim();
-  const dev = (DEV_KEY || "").toString().trim();
+  const dev = (process.env.DEV_KEY || "").toString().trim();
+
+  console.log("[verify-dev] received key:", k ? "****" : "(none)");
+  console.log("[verify-dev] DEV_KEY loaded:", dev ? "OK" : "MISSING");
 
   if (!dev) {
-    console.warn("[verify-dev] DEV_KEY not set in environment!");
     return res.status(500).json({ valid: false, error: "Server DEV_KEY missing" });
   }
 
   if (k === dev) {
-    req.session.devUnlocked = true;
-    console.log("[verify-dev] ✅ keys match — dev unlocked for this session");
+    console.log("[verify-dev] ✅ keys match — dev unlocked");
+    req.session.devUnlocked = true; // ✅ Set session flag
     return res.json({ valid: true });
   }
 
-  console.log("[verify-dev] ❌ keys DO NOT match:", { received: k, expected: dev });
-  res.json({ valid: false });
+  console.log("[verify-dev] ❌ invalid key");
+  res.status(403).json({ valid: false });
 });
 
 
@@ -343,6 +354,44 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     console.log("❌ Client disconnected:", socket.id);
   });
+});
+
+let cachedSolPrice = null;
+let lastFetchTime = 0;
+
+app.get("/sol-price", async (req, res) => {
+  const TEN_MINUTES = 10 * 60 * 1000;
+  const now = Date.now();
+
+  // ✅ Serve cached value if it's fresh
+  if (cachedSolPrice && now - lastFetchTime < TEN_MINUTES) {
+    return res.json(cachedSolPrice);
+  }
+
+  try {
+    const url = "https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd";
+    console.log("🌐 Fetching new SOL price from:", url);
+
+    const r = await fetch(url);
+    console.log("🔍 Fetch status:", r.status);
+
+    if (!r.ok) throw new Error("Coingecko API failed");
+
+    const data = await r.json();
+
+    if (!data.solana || typeof data.solana.usd !== "number") {
+      throw new Error("Invalid Coingecko data structure");
+    }
+
+    cachedSolPrice = data;
+    lastFetchTime = now;
+
+    res.json(data);
+  } catch (err) {
+    console.error("❌ SOL price fetch failed:", err);
+    // fallback to last cached value or 0
+    res.json(cachedSolPrice || { solana: { usd: 0 }, error: err.message });
+  }
 });
 
 
