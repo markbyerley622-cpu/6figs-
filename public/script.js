@@ -1,4 +1,18 @@
+console.log('[SCRIPT LOADED] 📜 script.js is loading...');
+console.log('[SCRIPT INFO] Audio system is DISABLED - video background only');
+console.log('[SCRIPT INFO] All AudioContext warnings should be eliminated');
 
+// === AUDIO SYSTEM DISABLED (video only) ===
+// No-op functions to prevent errors
+function playRetroSound(type = 'click') {
+  console.log(`[AUDIO DISABLED] playRetroSound('${type}') called but audio is disabled`);
+  // Audio disabled - video only
+}
+
+function addSoundEffects() {
+  console.log('[AUDIO DISABLED] addSoundEffects() called but audio is disabled');
+  // Audio disabled - video only
+}
 
 // === DOM Elements ===
 const solPriceEl = document.getElementById("sol-price");
@@ -98,6 +112,9 @@ window.devUnlocked = false; // global flag to check if dev mode is unlocked
 function launchConfetti() {
   if (window.confettiActive) return; // prevent spam
   window.confettiActive = true;
+
+  // Play success sound!
+  playRetroSound('success');
 
   // Simple confetti burst using canvas-confetti (if included)
   if (window.confetti) {
@@ -435,6 +452,7 @@ async function loadGallery() {
 
       // --- Click to Buy behavior ---
       card.addEventListener("click", () => {
+        playRetroSound('coin'); // Play coin sound when clicking NFT!
         const url =
           nft.magicEdenUrl ||
           `https://magiceden.io/item-details/${encodeURIComponent(nft.id)}`;
@@ -443,6 +461,9 @@ async function loadGallery() {
 
       grid.appendChild(card);
     });
+
+    // Re-add sound effects to newly loaded NFT cards
+    addSoundEffects();
 
     // === ✅ Update stats ===
     const currentCount = data.length;
@@ -827,16 +848,337 @@ window.updateStats = updateStats;
 window.launchConfetti = launchConfetti;
 
 
+// === SPACE INVADERS GAME FOR DASHBOARD BOX ===
+function initDashboardSpaceInvaders() {
+  const canvas = document.getElementById('dashboardGameCanvas');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  const dashboard = canvas.parentElement;
+
+  // Set canvas size to match dashboard
+  function resizeCanvas() {
+    canvas.width = dashboard.offsetWidth;
+    canvas.height = dashboard.offsetHeight;
+  }
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  // Space Invader class
+  class DashboardInvader {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = 30 + Math.random() * 20;
+      this.dx = (Math.random() - 0.5) * 1.2;
+      this.dy = (Math.random() - 0.5) * 0.5;
+      this.animFrame = 0;
+      this.animSpeed = 0.08;
+      this.type = Math.floor(Math.random() * 3);
+      this.colors = ['#00FF00', '#FF00FF', '#00FFFF', '#FFFF00'];
+      this.color = this.colors[Math.floor(Math.random() * this.colors.length)];
+    }
+
+    draw() {
+      this.x += this.dx;
+      this.y += this.dy;
+      this.animFrame += this.animSpeed;
+
+      // Bounce off edges
+      if (this.x < 0 || this.x > canvas.width) this.dx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.dy *= -1;
+
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 20;
+
+      const frame = Math.floor(this.animFrame) % 2;
+      const s = this.size / 8;
+
+      // Draw classic Space Invader sprite
+      if (this.type === 0) {
+        const pattern = frame === 0
+          ? [[0,0,1,0,0,0,0,0,1,0,0],
+             [0,0,0,1,0,0,0,1,0,0,0],
+             [0,0,1,1,1,1,1,1,1,0,0],
+             [0,1,1,0,1,1,1,0,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,0,1,0,0,0,0,0,1,0,1],
+             [0,0,0,1,1,0,1,1,0,0,0]]
+          : [[0,0,1,0,0,0,0,0,1,0,0],
+             [1,0,0,1,0,0,0,1,0,0,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,1,1,0,1,1,1,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [0,1,1,1,1,1,1,1,1,1,0],
+             [0,0,1,0,0,0,0,0,1,0,0],
+             [0,1,0,0,0,0,0,0,0,1,0]];
+        this.drawPattern(pattern, s);
+      } else if (this.type === 1) {
+        const pattern = frame === 0
+          ? [[0,0,1,0,0,0,0,0,1,0,0],
+             [0,0,0,1,0,0,0,1,0,0,0],
+             [0,0,1,1,1,1,1,1,1,0,0],
+             [0,1,1,0,1,1,1,0,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,0,1,0,0,0,0,0,1,0,1],
+             [0,0,0,1,1,0,1,1,0,0,0]]
+          : [[0,0,1,0,0,0,0,0,1,0,0],
+             [1,0,0,1,0,0,0,1,0,0,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,1,1,0,1,1,1,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [0,1,1,1,1,1,1,1,1,1,0],
+             [0,0,1,0,0,0,0,0,1,0,0],
+             [0,1,0,0,0,0,0,0,0,1,0]];
+        this.drawPattern(pattern, s);
+      } else {
+        const pattern = frame === 0
+          ? [[0,0,0,0,1,1,1,1,0,0,0,0],
+             [0,1,1,1,1,1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [1,1,1,0,0,1,1,0,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [0,0,1,1,1,0,0,1,1,1,0,0],
+             [0,1,1,0,0,1,1,0,0,1,1,0],
+             [1,1,0,0,0,0,0,0,0,0,1,1]]
+          : [[0,0,0,0,1,1,1,1,0,0,0,0],
+             [0,1,1,1,1,1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [1,1,1,0,0,1,1,0,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [0,0,0,1,1,0,0,1,1,0,0,0],
+             [0,0,1,1,0,1,1,0,1,1,0,0],
+             [0,0,1,1,0,0,0,0,1,1,0,0]];
+        this.drawPattern(pattern, s);
+      }
+
+      ctx.restore();
+    }
+
+    drawPattern(pattern, pixelSize) {
+      const offsetX = -(pattern[0].length * pixelSize) / 2;
+      const offsetY = -(pattern.length * pixelSize) / 2;
+
+      for (let row = 0; row < pattern.length; row++) {
+        for (let col = 0; col < pattern[row].length; col++) {
+          if (pattern[row][col] === 1) {
+            ctx.fillRect(
+              offsetX + col * pixelSize,
+              offsetY + row * pixelSize,
+              pixelSize,
+              pixelSize
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Create invaders
+  const invaders = Array.from({ length: 8 }, () => new DashboardInvader());
+
+  // Laser beam effect
+  class LaserBeam {
+    constructor() {
+      this.reset();
+    }
+
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = canvas.height;
+      this.speed = 3 + Math.random() * 2;
+      this.height = 20 + Math.random() * 30;
+      this.width = 2 + Math.random() * 2;
+      this.color = ['#00FF00', '#FF00FF', '#00FFFF', '#FFFF00'][Math.floor(Math.random() * 4)];
+    }
+
+    draw() {
+      this.y -= this.speed;
+      if (this.y < -this.height) this.reset();
+
+      ctx.save();
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = this.color;
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+      ctx.restore();
+    }
+  }
+
+  const lasers = Array.from({ length: 5 }, () => new LaserBeam());
+
+  // Animation loop
+  function animate() {
+    ctx.fillStyle = 'rgba(5, 0, 15, 0.15)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Draw lasers
+    lasers.forEach(laser => laser.draw());
+
+    // Draw invaders
+    invaders.forEach(invader => invader.draw());
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+}
+
+// === MOBILE DETECTION ===
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || window.innerWidth < 768;
+}
+
+// === BACKGROUND VIDEO HANDLER ===
+function initBackgroundVideo() {
+  console.log('[VIDEO INIT] Starting background video initialization...');
+  const bgVideo = document.getElementById('bgVideo');
+
+  if (!bgVideo) {
+    console.error('[VIDEO ERROR] ❌ Background video element #bgVideo not found in DOM');
+    return;
+  }
+
+  // Hide video on mobile devices
+  if (isMobileDevice()) {
+    console.log('[VIDEO] Mobile device detected - hiding video for performance');
+    bgVideo.style.display = 'none';
+    return;
+  }
+
+  console.log('[VIDEO FOUND] ✅ Video element found:', bgVideo);
+  console.log('[VIDEO STATE] Current state:', {
+    paused: bgVideo.paused,
+    muted: bgVideo.muted,
+    loop: bgVideo.loop,
+    autoplay: bgVideo.autoplay,
+    readyState: bgVideo.readyState,
+    src: bgVideo.currentSrc || bgVideo.src
+  });
+
+  // Ensure video properties are set correctly
+  bgVideo.muted = true;
+  bgVideo.loop = true;
+  bgVideo.playsInline = true;
+
+  console.log('[VIDEO CONFIG] Video configured: muted=true, loop=true, playsInline=true');
+
+  // Try to play the video
+  console.log('[VIDEO PLAY] Attempting to play video...');
+  const playPromise = bgVideo.play();
+
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        console.log('[VIDEO SUCCESS] ✅ Video is playing successfully!');
+        console.log('[VIDEO STATE] Playing state:', {
+          paused: bgVideo.paused,
+          currentTime: bgVideo.currentTime,
+          duration: bgVideo.duration
+        });
+      })
+      .catch(err => {
+        console.error('[VIDEO ERROR] ❌ Video autoplay failed:', err.name, err.message);
+        console.log('[VIDEO RETRY] Setting up click handler for manual play...');
+
+        // Try to play on first user interaction
+        const playOnClick = () => {
+          console.log('[VIDEO CLICK] User interaction detected, attempting to play video...');
+          bgVideo.play()
+            .then(() => {
+              console.log('[VIDEO SUCCESS] ✅ Video started after user interaction!');
+            })
+            .catch(e => {
+              console.error('[VIDEO ERROR] ❌ Video play failed even after user interaction:', e.name, e.message);
+            });
+        };
+
+        document.addEventListener('click', playOnClick, { once: true });
+        document.addEventListener('touchstart', playOnClick, { once: true });
+      });
+  }
+
+  // Monitor video events
+  bgVideo.addEventListener('loadeddata', () => {
+    console.log('[VIDEO EVENT] Video data loaded, duration:', bgVideo.duration);
+  });
+
+  bgVideo.addEventListener('canplay', () => {
+    console.log('[VIDEO EVENT] Video can start playing');
+  });
+
+  bgVideo.addEventListener('playing', () => {
+    console.log('[VIDEO EVENT] Video is now playing');
+  });
+
+  bgVideo.addEventListener('pause', () => {
+    console.log('[VIDEO EVENT] Video paused');
+  });
+
+  bgVideo.addEventListener('error', (e) => {
+    console.error('[VIDEO ERROR] Video error event:', e);
+    if (bgVideo.error) {
+      console.error('[VIDEO ERROR] Error details:', {
+        code: bgVideo.error.code,
+        message: bgVideo.error.message
+      });
+    }
+  });
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
+  console.log('[APP INIT] 🚀 Application starting...');
+
+  console.log('[APP INIT] Updating placeholder stats...');
   updatePlaceholderStats();
+
+  console.log('[APP INIT] Loading global state...');
   await loadGlobalState(); // 🧠 load state first
+
+  console.log('[APP INIT] Fetching SOL price...');
   await fetchSolPrice();
+
+  console.log('[APP INIT] Loading galleries...');
   loadGallery();
   loadSoldGallery();
+
+  console.log('[APP INIT] Updating progress...');
   updateProgress();
 
+  // Initialize background video
+  console.log('[APP INIT] Initializing background video...');
+  initBackgroundVideo();
 
+  // Initialize sound effects (disabled)
+  console.log('[APP INIT] Initializing sound effects (disabled)...');
+  addSoundEffects();
 
-  setInterval(fetchSolPrice, 15000);
-  setInterval(updateProgress, 15000);
+  // Initialize Space Invaders game in dashboard
+  console.log('[APP INIT] Initializing Space Invaders game...');
+  initDashboardSpaceInvaders();
+
+  // Re-add sounds after gallery loads (disabled but keeping for compatibility)
+  setTimeout(() => {
+    console.log('[APP INIT] Re-adding sound effects after gallery load (disabled)...');
+    addSoundEffects();
+  }, 1000);
+
+  console.log('[APP INIT] Setting up periodic updates...');
+  setInterval(() => {
+    console.log('[UPDATE] Fetching SOL price...');
+    fetchSolPrice();
+  }, 15000);
+
+  setInterval(() => {
+    console.log('[UPDATE] Updating progress...');
+    updateProgress();
+  }, 15000);
+
+  console.log('[APP INIT] ✅ Application initialized successfully!');
 });

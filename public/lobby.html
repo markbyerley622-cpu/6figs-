@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RetardioStrategy™ Lobby</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Lobby-specific styles */
+    .lobby-container {
+      width: 100%;
+      max-width: 900px;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px,
+          transparent 8px,
+          rgba(255, 255, 0, 0.04) 8px,
+          rgba(255, 255, 0, 0.04) 10px,
+          transparent 10px,
+          transparent 30px
+        ),
+        repeating-linear-gradient(
+          0deg,
+          transparent 0px,
+          transparent 20px,
+          rgba(255, 0, 255, 0.03) 20px,
+          rgba(255, 0, 255, 0.03) 22px
+        ),
+        repeating-linear-gradient(
+          45deg,
+          rgba(0, 255, 255, 0.03) 0px,
+          rgba(0, 255, 255, 0.03) 10px,
+          transparent 10px,
+          transparent 20px
+        ),
+        radial-gradient(ellipse at top, rgba(30, 0, 60, 0.7) 0%, transparent 70%),
+        radial-gradient(ellipse at bottom, rgba(0, 30, 60, 0.7) 0%, transparent 70%),
+        linear-gradient(135deg, rgba(5,0,20,0.98) 0%, rgba(10,0,30,0.98) 50%, rgba(5,0,20,0.98) 100%);
+      border: 3px solid #00FFFF;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow:
+        0 0 25px rgba(0, 255, 255, 0.6),
+        0 0 50px rgba(255, 0, 255, 0.4),
+        inset 0 0 80px rgba(0, 255, 255, 0.08),
+        inset 0 0 120px rgba(255, 0, 255, 0.05);
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      animation: arcadeBoxPulse 4s ease-in-out infinite;
+      overflow: hidden;
+      margin-top: 40px;
+    }
+
+    .lobby-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .back-btn {
+      background: linear-gradient(135deg, #FF00FF, #00FFFF);
+      color: #000;
+      font-weight: bold;
+      border: 3px solid #FFFF00;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow:
+        0 0 15px rgba(255, 0, 255, 0.6),
+        0 4px 0 rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      position: relative;
+      top: 0;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .back-btn:hover {
+      background: linear-gradient(135deg, #FFFF00, #00FF00);
+      border-color: #00FFFF;
+      box-shadow:
+        0 0 25px rgba(255, 255, 0, 0.8),
+        0 2px 0 rgba(0, 0, 0, 0.3);
+      top: 2px;
+    }
+
+    .online-count {
+      color: #00FF00;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+      font-weight: bold;
+    }
+
+    .messages-container {
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      height: 400px;
+      overflow-y: auto;
+      padding: 15px;
+      margin-bottom: 20px;
+      text-align: left;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+    }
+
+    .message {
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background: rgba(255, 0, 255, 0.1);
+      border-left: 3px solid #FF00FF;
+      border-radius: 4px;
+      animation: messageSlideIn 0.3s ease-out;
+    }
+
+    .message.system {
+      background: rgba(0, 255, 255, 0.1);
+      border-left-color: #00FFFF;
+      font-style: italic;
+    }
+
+    @keyframes messageSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .message-sender {
+      color: #FFFF00;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
+      margin-right: 8px;
+    }
+
+    .message-text {
+      color: #00FFFF;
+      text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+    }
+
+    .message-time {
+      color: #999;
+      font-size: 0.75rem;
+      margin-left: 8px;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    .message-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.5);
+      border: 2px solid #00FFFF;
+      border-radius: 4px;
+      padding: 12px;
+      color: #00FFFF;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.2);
+    }
+
+    .message-input:focus {
+      outline: none;
+      border-color: #FFFF00;
+      box-shadow: 0 0 15px rgba(255, 255, 0, 0.6);
+    }
+
+    .send-btn {
+      background: linear-gradient(135deg, #00FF00, #00FFFF);
+      color: #000;
+      font-weight: bold;
+      border: 3px solid #FFFF00;
+      border-radius: 4px;
+      padding: 12px 24px;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow:
+        0 0 15px rgba(0, 255, 0, 0.6),
+        0 4px 0 rgba(0, 0, 0, 0.3);
+      transition: all 0.2s ease;
+      position: relative;
+      top: 0;
+      min-width: 100px;
+    }
+
+    .send-btn:hover {
+      background: linear-gradient(135deg, #FFFF00, #FF00FF);
+      border-color: #00FFFF;
+      box-shadow:
+        0 0 25px rgba(255, 255, 0, 0.8),
+        0 2px 0 rgba(0, 0, 0, 0.3);
+      top: 2px;
+    }
+
+    .send-btn:active {
+      top: 4px;
+      box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+    }
+
+    /* Custom scrollbar */
+    .messages-container::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .messages-container::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+    }
+
+    .messages-container::-webkit-scrollbar-thumb {
+      background: #00FFFF;
+      border-radius: 4px;
+      box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    }
+
+    .messages-container::-webkit-scrollbar-thumb:hover {
+      background: #FFFF00;
+    }
+
+    /* Wallet display in lobby */
+    .lobby-wallet {
+      margin-top: 20px;
+      padding: 10px;
+      background: rgba(255, 0, 255, 0.1);
+      border: 2px solid #FF00FF;
+      border-radius: 4px;
+    }
+
+    .lobby-wallet-label {
+      color: #FF00FF;
+      font-weight: bold;
+      text-shadow: 0 0 8px rgba(255, 0, 255, 0.8);
+    }
+
+    .lobby-wallet-address {
+      color: #00FF00;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 8px rgba(0, 255, 0, 0.8);
+      margin-left: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .lobby-container {
+        padding: 15px;
+      }
+
+      .messages-container {
+        height: 300px;
+      }
+
+      .input-container {
+        flex-direction: column;
+      }
+
+      .send-btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Video background (very back layer) -->
+  <video id="bgVideo" autoplay muted loop playsinline style="
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -2;
+    opacity: 0.15;
+    pointer-events: none;
+  ">
+    <source src="retardiovid.mp4" type="video/mp4">
+  </video>
+
+  <!-- Particle background -->
+  <canvas id="orbCanvas"></canvas>
+
+  <div class="lobby-container">
+    <div class="lobby-header">
+      <a href="index.html" class="back-btn">← Back</a>
+      <h1 style="margin: 0; flex: 1;">RetardioStrategy™ Lobby</h1>
+      <div class="online-count">
+        <span id="online-count">0</span> online
+      </div>
+    </div>
+
+    <div class="lobby-wallet">
+      <span class="lobby-wallet-label">Connected:</span>
+      <span class="lobby-wallet-address" id="lobby-wallet-display">Not Connected</span>
+    </div>
+
+    <div class="messages-container" id="messages">
+      <div class="message system">
+        <span class="message-text">Welcome to the RetardioStrategy™ Lobby! Connect your wallet to start chatting.</span>
+      </div>
+    </div>
+
+    <div class="input-container">
+      <input
+        type="text"
+        id="message-input"
+        class="message-input"
+        placeholder="Type your message..."
+        maxlength="500"
+      />
+      <button id="send-btn" class="send-btn">Send</button>
+    </div>
+  </div>
+
+  <!-- Retro background animation script (reuse from main page) -->
+  <script>
+    const canvas = document.getElementById("orbCanvas");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+
+    const retroColors = [
+      { color: "#00FFFF", glow: "#00FFFF" },
+      { color: "#FF00FF", glow: "#FF00FF" },
+      { color: "#FFFF00", glow: "#FFFF00" },
+      { color: "#00FF00", glow: "#00FF00" },
+      { color: "#FF4FD8", glow: "#FF4FD8" },
+      { color: "#14F195", glow: "#14F195" }
+    ];
+
+    class PixelBlock {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = 20 + Math.floor(Math.random() * 4) * 10;
+        this.dx = (Math.random() - 0.5) * 1.2;
+        this.dy = (Math.random() - 0.5) * 1.2;
+        this.opacity = 0.15 + Math.random() * 0.25;
+        this.rotation = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.02;
+        const chosen = retroColors[Math.floor(Math.random() * retroColors.length)];
+        this.baseColor = chosen.color;
+        this.glowColor = chosen.glow;
+        this.shape = Math.floor(Math.random() * 3);
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.shadowColor = this.glowColor;
+        ctx.shadowBlur = 30;
+        const rgba = this.hexToRgba(this.baseColor, this.opacity);
+        ctx.fillStyle = rgba;
+        ctx.strokeStyle = this.hexToRgba(this.baseColor, this.opacity + 0.2);
+        ctx.lineWidth = 2;
+
+        if (this.shape === 0) {
+          ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+          ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+        } else if (this.shape === 1) {
+          ctx.beginPath();
+          ctx.moveTo(0, -this.size/2);
+          ctx.lineTo(this.size/2, 0);
+          ctx.lineTo(0, this.size/2);
+          ctx.lineTo(-this.size/2, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          const thick = this.size / 4;
+          ctx.fillRect(-this.size/2, -thick/2, this.size, thick);
+          ctx.fillRect(-thick/2, -this.size/2, thick, this.size);
+          ctx.strokeRect(-this.size/2, -thick/2, this.size, thick);
+          ctx.strokeRect(-thick/2, -this.size/2, thick, this.size);
+        }
+        ctx.restore();
+      }
+
+      update() {
+        this.x += this.dx;
+        this.y += this.dy;
+        this.rotation += this.rotationSpeed;
+        if (this.x < -50 || this.x > canvas.width + 50) this.dx *= -1;
+        if (this.y < -50 || this.y > canvas.height + 50) this.dy *= -1;
+        this.draw();
+      }
+
+      hexToRgba(hex, alpha) {
+        const bigint = parseInt(hex.slice(1), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+    }
+
+    class Star {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.z = Math.random() * canvas.width;
+        this.speed = 0.5 + Math.random() * 1.5;
+      }
+
+      update() {
+        this.z -= this.speed;
+        if (this.z <= 0) this.reset();
+      }
+
+      draw() {
+        const x = (this.x - canvas.width / 2) * (canvas.width / this.z);
+        const y = (this.y - canvas.height / 2) * (canvas.width / this.z);
+        const s = (1 - this.z / canvas.width) * 2;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        ctx.fillStyle = `rgba(255, 255, 255, ${1 - this.z / canvas.width})`;
+        ctx.fillRect(centerX + x, centerY + y, s, s);
+      }
+    }
+
+    const blocks = Array.from({ length: 12 }, () => new PixelBlock());
+    const stars = Array.from({ length: 50 }, () => new Star());
+    let gridOffset = 0;
+
+    function drawGrid() {
+      const gridSize = 40;
+      ctx.strokeStyle = "rgba(0, 255, 255, 0.05)";
+      ctx.lineWidth = 1;
+      for (let x = (gridOffset % gridSize); x < canvas.width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = (gridOffset % gridSize); y < canvas.height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+      gridOffset += 0.3;
+    }
+
+    function drawScanlines() {
+      ctx.strokeStyle = "rgba(0, 255, 0, 0.03)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < canvas.height; i += 4) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(canvas.width, i);
+        ctx.stroke();
+      }
+    }
+
+    function animate() {
+      ctx.fillStyle = "rgba(5, 0, 15, 0.3)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      stars.forEach(star => {
+        star.update();
+        star.draw();
+      });
+      drawGrid();
+      blocks.forEach(block => block.update());
+      drawScanlines();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+    window.addEventListener("resize", resizeCanvas);
+  </script>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="lobby.js"></script>
+
+  <script>
+    // Mobile detection - hide video on mobile devices
+    function isMobileDevice() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || window.innerWidth < 768;
+    }
+
+    // Hide video on mobile
+    document.addEventListener('DOMContentLoaded', function() {
+      const video = document.getElementById('bgVideo');
+      if (video && isMobileDevice()) {
+        console.log('[LOBBY VIDEO] Mobile device detected - hiding video');
+        video.style.display = 'none';
+      } else if (video) {
+        console.log('[LOBBY VIDEO] Desktop device - video enabled');
+      }
+    });
+
+    // Auto-refresh lobby after 30 minutes
+    const AUTO_REFRESH_TIME = 30 * 60 * 1000; // 30 minutes in milliseconds
+    console.log('[LOBBY] Auto-refresh set for 30 minutes');
+
+    setTimeout(function() {
+      console.log('[LOBBY] Auto-refreshing after 30 minutes...');
+      window.location.reload();
+    }, AUTO_REFRESH_TIME);
+  </script>
+</body>
+</html>

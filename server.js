@@ -17,15 +17,27 @@ const multer = require("multer");
 const session = require("express-session");
 require("dotenv").config();
 const cors = require("cors");
+const compression = require("compression");
 
 const http = require("http");
 const { Server } = require("socket.io");
 
 
 const app = express();
+
+// ✅ Enable GZIP compression for faster page loading
+app.use(compression());
+
 app.use(express.json({ limit: "50mb" })); // ✅ increase payload size limit for base64 images
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
-app.use(express.static("public"));
+
+// ✅ Serve static files with caching for better performance
+app.use(express.static("public", {
+  maxAge: "1h", // Cache static files for 1 hour
+  etag: true,
+  lastModified: true
+}));
+
 app.use(cors());
 
 
@@ -340,6 +352,46 @@ io.emit("soldUpdated");
   }
 });
 
+// === Lobby System ===
+const LOBBY_HISTORY_FILE = path.join(__dirname, "lobby-history.json");
+if (!fs.existsSync(LOBBY_HISTORY_FILE)) fs.writeFileSync(LOBBY_HISTORY_FILE, "[]");
+
+const lobbyUsers = new Map(); // Track connected users: socket.id -> { username, walletAddress }
+const MAX_LOBBY_HISTORY = 100; // Keep last 100 messages
+
+// Load lobby history
+function getLobbyHistory() {
+  try {
+    return JSON.parse(fs.readFileSync(LOBBY_HISTORY_FILE, "utf-8"));
+  } catch {
+    return [];
+  }
+}
+
+// Save lobby message to history
+function saveLobbyMessage(message) {
+  try {
+    let history = getLobbyHistory();
+    history.push(message);
+
+    // Keep only last MAX_LOBBY_HISTORY messages
+    if (history.length > MAX_LOBBY_HISTORY) {
+      history = history.slice(-MAX_LOBBY_HISTORY);
+    }
+
+    fs.writeFileSync(LOBBY_HISTORY_FILE, JSON.stringify(history, null, 2));
+  } catch (err) {
+    console.error("❌ Error saving lobby message:", err);
+  }
+}
+
+// Broadcast online count to all clients
+function broadcastOnlineCount() {
+  const count = lobbyUsers.size;
+  io.emit("lobbyOnlineCount", count);
+  console.log(`👥 Lobby users online: ${count}`);
+}
+
 io.on("connection", (socket) => {
   console.log("🌐 New client connected:", socket.id);
 
@@ -351,8 +403,64 @@ io.on("connection", (socket) => {
     socket.emit("stateUpdated", {});
   }
 
+  // === Lobby Events ===
+
+  // User joins lobby
+  socket.on("lobbyJoin", (data) => {
+    const { username, walletAddress } = data;
+    lobbyUsers.set(socket.id, { username, walletAddress });
+
+    console.log(`🎮 ${username} joined the lobby`);
+
+    // Send message history to the user
+    const history = getLobbyHistory();
+    socket.emit("lobbyHistory", history.slice(-50)); // Send last 50 messages
+
+    // Notify all users
+    io.emit("userJoined", { username });
+
+    // Update online count
+    broadcastOnlineCount();
+  });
+
+  // User sends message
+  socket.on("lobbyMessage", (message) => {
+    const user = lobbyUsers.get(socket.id);
+
+    if (!user) {
+      console.warn("⚠️ Message from non-lobby user:", socket.id);
+      return;
+    }
+
+    // Add timestamp if not present
+    if (!message.timestamp) {
+      message.timestamp = Date.now();
+    }
+
+    console.log(`💬 [${user.username}]: ${message.text}`);
+
+    // Save to history
+    saveLobbyMessage(message);
+
+    // Broadcast to all clients
+    io.emit("lobbyMessage", message);
+  });
+
   socket.on("disconnect", () => {
-    console.log("❌ Client disconnected:", socket.id);
+    const user = lobbyUsers.get(socket.id);
+
+    if (user) {
+      console.log(`❌ ${user.username} left the lobby`);
+      lobbyUsers.delete(socket.id);
+
+      // Notify all users
+      io.emit("userLeft", { username: user.username });
+
+      // Update online count
+      broadcastOnlineCount();
+    } else {
+      console.log("❌ Client disconnected:", socket.id);
+    }
   });
 });
 

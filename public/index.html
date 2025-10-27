@@ -7,6 +7,83 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <!-- Video background (very back layer) -->
+  <!-- muted is REQUIRED for autoplay to work in modern browsers -->
+  <!-- playsinline is REQUIRED for iOS devices -->
+  <video
+    id="bgVideo"
+    autoplay
+    muted
+    loop
+    playsinline
+    preload="auto"
+    style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+      opacity: 0.4;
+      pointer-events: none;
+    "
+  >
+    <source src="retardiovid.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+
+  <script>
+    // Mobile detection - hide video on mobile devices
+    function isMobileDevice() {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+        || window.innerWidth < 768;
+    }
+
+    // Force video to play (DESKTOP ONLY)
+    document.addEventListener('DOMContentLoaded', function() {
+      const video = document.getElementById('bgVideo');
+
+      if (video) {
+        // Hide video on mobile devices
+        if (isMobileDevice()) {
+          console.log('[VIDEO] Mobile device detected - hiding video');
+          video.style.display = 'none';
+          return;
+        }
+
+        console.log('[VIDEO] Desktop device - attempting to play background video...');
+
+        video.play().then(() => {
+          console.log('[VIDEO] ✅ Video is playing');
+        }).catch(err => {
+          console.error('[VIDEO] ❌ Failed to play:', err);
+          // Try again on user interaction
+          document.body.addEventListener('click', function playOnce() {
+            video.play().then(() => {
+              console.log('[VIDEO] ✅ Video started after user interaction');
+              document.body.removeEventListener('click', playOnce);
+            }).catch(e => console.error('[VIDEO] Still failed:', e));
+          });
+        });
+
+        // Log when video is ready
+        video.addEventListener('canplay', () => {
+          console.log('[VIDEO] Video can play - duration:', video.duration, 'seconds');
+        });
+
+        video.addEventListener('error', (e) => {
+          console.error('[VIDEO] Video error:', e);
+          console.error('[VIDEO] Error details:', video.error);
+        });
+
+        video.addEventListener('loadeddata', () => {
+          console.log('[VIDEO] Video data loaded');
+        });
+      }
+    });
+  </script>
+
   <!-- Particle background -->
   <canvas id="orbCanvas"></canvas>
 
@@ -22,12 +99,20 @@
     Follow X
   </button>
 
+  <!-- === Lobby Button === -->
+  <button id="lobby-btn" class="lobby-btn" onclick="window.location.href='lobby.html'">
+    🎮 live lobby
+  </button>
+
  <!-- === Aesthetic Non-Functional Button === -->
   <button class="aesthetic-btn" disabled>Compatible for all devices</button>
 </div>
 
 
   <div class="dashboard">
+    <!-- Space Invaders game canvas inside dashboard -->
+    <canvas id="dashboardGameCanvas"></canvas>
+
     <h1>RetardioStrategy™</h1>
     <h2>NFTStrategy (Solana Edition)</h2>
     <p class="contract">Contract: <span id="contract">Coming soon...</span></p>
@@ -51,7 +136,7 @@
     <div class="stats">
       <div class="stat"><span class="label">Holding</span><span id="holding">0 Retardios</span></div>
       <div class="stat"><span class="label">SOL Price</span><span id="sol-price">$0.00</span></div>
-      <div class="stat"><span class="label">$RTSTRDGY Price</span><span id="token-price">$0.0000</span></div>
+      <div class="stat"><span class="label">$RTRDSTR Price</span><span id="token-price">$0.0000</span></div>
       <div class="stat"><span class="label">Market Cap</span><span id="real-market-cap">$0.00M</span></div>
       <div class="stat"><span class="label">Liquidity</span><span id="market-cap">$0.00M</span></div>
       <div class="stat"><span class="label">24h Change</span><span id="change">-0.00%</span></div>
@@ -351,7 +436,7 @@ function launchConfetti() {
 }
 
 
-  // === Purple Orbs Background ===
+  // === RETRO GAME BACKGROUND ===
   const canvas = document.getElementById("orbCanvas");
   const ctx = canvas.getContext("2d");
 
@@ -361,47 +446,84 @@ function launchConfetti() {
   }
   resizeCanvas();
 
-  // Available orb colors
-  const orbColors = [
-    { color: "#FF4FD8", glow: "#FF4FD8" }, // Original purple-pink
-    { color: "#9945FF", glow: "#9945FF" }, // Solana purple
+  // Retro arcade color palette
+  const retroColors = [
+    { color: "#00FFFF", glow: "#00FFFF" }, // Cyan
+    { color: "#FF00FF", glow: "#FF00FF" }, // Magenta
+    { color: "#FFFF00", glow: "#FFFF00" }, // Yellow
+    { color: "#00FF00", glow: "#00FF00" }, // Green
+    { color: "#FF4FD8", glow: "#FF4FD8" }, // Pink
     { color: "#14F195", glow: "#14F195" }  // Solana green
   ];
 
-  class Orb {
+  // Pixel block class (retro game style)
+  class PixelBlock {
     constructor() {
       this.x = Math.random() * canvas.width;
       this.y = Math.random() * canvas.height;
-      this.size = 40 + Math.random() * 60;
-      this.dx = (Math.random() - 0.5) * 0.5;
-      this.dy = (Math.random() - 0.5) * 0.5;
-      this.opacity = 0.1 + Math.random() * 0.2;
+      this.size = 20 + Math.floor(Math.random() * 4) * 10; // Pixelated sizes
+      this.dx = (Math.random() - 0.5) * 1.2;
+      this.dy = (Math.random() - 0.5) * 1.2;
+      this.opacity = 0.15 + Math.random() * 0.25;
+      this.rotation = 0;
+      this.rotationSpeed = (Math.random() - 0.5) * 0.02;
 
-      // Random color from Solana + original palette
-      const chosen = orbColors[Math.floor(Math.random() * orbColors.length)];
+      const chosen = retroColors[Math.floor(Math.random() * retroColors.length)];
       this.baseColor = chosen.color;
       this.glowColor = chosen.glow;
+      this.shape = Math.floor(Math.random() * 3); // 0=square, 1=diamond, 2=plus
     }
 
     draw() {
-      ctx.beginPath();
-      ctx.fillStyle = `${this.hexToRgba(this.baseColor, this.opacity)}`;
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+
       ctx.shadowColor = this.glowColor;
-      ctx.shadowBlur = 40;
-      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.shadowBlur = 0;
+      ctx.shadowBlur = 30;
+
+      const rgba = this.hexToRgba(this.baseColor, this.opacity);
+      ctx.fillStyle = rgba;
+      ctx.strokeStyle = this.hexToRgba(this.baseColor, this.opacity + 0.2);
+      ctx.lineWidth = 2;
+
+      if (this.shape === 0) {
+        // Square
+        ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+        ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+      } else if (this.shape === 1) {
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(0, -this.size/2);
+        ctx.lineTo(this.size/2, 0);
+        ctx.lineTo(0, this.size/2);
+        ctx.lineTo(-this.size/2, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      } else {
+        // Plus/Cross
+        const thick = this.size / 4;
+        ctx.fillRect(-this.size/2, -thick/2, this.size, thick);
+        ctx.fillRect(-thick/2, -this.size/2, thick, this.size);
+        ctx.strokeRect(-this.size/2, -thick/2, this.size, thick);
+        ctx.strokeRect(-thick/2, -this.size/2, thick, this.size);
+      }
+
+      ctx.restore();
     }
 
     update() {
       this.x += this.dx;
       this.y += this.dy;
-      if (this.x < 0 || this.x > canvas.width) this.dx *= -1;
-      if (this.y < 0 || this.y > canvas.height) this.dy *= -1;
+      this.rotation += this.rotationSpeed;
+
+      if (this.x < -50 || this.x > canvas.width + 50) this.dx *= -1;
+      if (this.y < -50 || this.y > canvas.height + 50) this.dy *= -1;
+
       this.draw();
     }
 
-    // Helper to convert hex → rgba
     hexToRgba(hex, alpha) {
       const bigint = parseInt(hex.slice(1), 16);
       const r = (bigint >> 16) & 255;
@@ -411,12 +533,459 @@ function launchConfetti() {
     }
   }
 
-  const orbs = Array.from({ length: 15 }, () => new Orb());
+  // Starfield effect
+  class Star {
+    constructor() {
+      this.reset();
+    }
 
-  function animate() {
-    ctx.fillStyle = "rgba(10,0,10,0.3)";
+    reset() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.z = Math.random() * canvas.width;
+      this.speed = 0.5 + Math.random() * 1.5;
+    }
+
+    update() {
+      this.z -= this.speed;
+      if (this.z <= 0) this.reset();
+    }
+
+    draw() {
+      const x = (this.x - canvas.width / 2) * (canvas.width / this.z);
+      const y = (this.y - canvas.height / 2) * (canvas.width / this.z);
+      const s = (1 - this.z / canvas.width) * 2;
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      ctx.fillStyle = `rgba(255, 255, 255, ${1 - this.z / canvas.width})`;
+      ctx.fillRect(centerX + x, centerY + y, s, s);
+    }
+  }
+
+  const blocks = Array.from({ length: 8 }, () => new PixelBlock()); // Reduced from 12
+  const stars = Array.from({ length: 30 }, () => new Star()); // Reduced from 50
+  let gridOffset = 0;
+
+  // === DVD BOUNCING BOX (Classic Screensaver Style) ===
+  class DVDBouncingBox {
+    constructor() {
+      this.width = 120;
+      this.height = 80;
+      this.x = Math.random() * (canvas.width - this.width);
+      this.y = Math.random() * (canvas.height - this.height);
+      this.dx = 2 + Math.random() * 2;
+      this.dy = 2 + Math.random() * 2;
+
+      // Rainbow colors for DVD effect
+      this.colors = [
+        '#FF0000', // Red
+        '#FF7F00', // Orange
+        '#FFFF00', // Yellow
+        '#00FF00', // Green
+        '#00FFFF', // Cyan
+        '#0000FF', // Blue
+        '#8B00FF', // Purple
+        '#FF00FF'  // Magenta
+      ];
+      this.colorIndex = Math.floor(Math.random() * this.colors.length);
+    }
+
+    changeColor() {
+      this.colorIndex = (this.colorIndex + 1) % this.colors.length;
+    }
+
+    draw() {
+      this.x += this.dx;
+      this.y += this.dy;
+
+      // Bounce off edges and change color
+      if (this.x <= 0 || this.x + this.width >= canvas.width) {
+        this.dx *= -1;
+        this.changeColor();
+      }
+      if (this.y <= 0 || this.y + this.height >= canvas.height) {
+        this.dy *= -1;
+        this.changeColor();
+      }
+
+      // Keep within bounds
+      this.x = Math.max(0, Math.min(this.x, canvas.width - this.width));
+      this.y = Math.max(0, Math.min(this.y, canvas.height - this.height));
+
+      ctx.save();
+
+      // Draw glowing box
+      const currentColor = this.colors[this.colorIndex];
+      ctx.shadowColor = currentColor;
+      ctx.shadowBlur = 30;
+
+      // Outer glow
+      ctx.fillStyle = currentColor + '40'; // 25% opacity
+      ctx.fillRect(this.x - 10, this.y - 10, this.width + 20, this.height + 20);
+
+      // Main box
+      ctx.fillStyle = currentColor + 'CC'; // 80% opacity
+      ctx.fillRect(this.x, this.y, this.width, this.height);
+
+      // Border
+      ctx.strokeStyle = currentColor;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(this.x, this.y, this.width, this.height);
+
+      // DVD text style
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 24px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('DVD', this.x + this.width / 2, this.y + this.height / 2);
+
+      ctx.restore();
+    }
+  }
+
+  // === ARCADE GAME ELEMENTS (Mario/DK style) ===
+  class ArcadeCoin {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = 20;
+      this.floatOffset = Math.random() * Math.PI * 2;
+      this.floatSpeed = 0.02 + Math.random() * 0.02;
+      this.baseY = this.y;
+      this.rotation = 0;
+    }
+
+    draw() {
+      this.floatOffset += this.floatSpeed;
+      this.y = this.baseY + Math.sin(this.floatOffset) * 30;
+      this.rotation += 0.05;
+
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+
+      // Gold coin
+      const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+      gradient.addColorStop(0, '#FFD700');
+      gradient.addColorStop(0.5, '#FFA500');
+      gradient.addColorStop(1, '#FF8C00');
+
+      ctx.shadowColor = '#FFD700';
+      ctx.shadowBlur = 15;
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size / 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Coin detail
+      ctx.strokeStyle = '#FFFF00';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+
+  class QuestionBlock {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = 30;
+      this.floatOffset = Math.random() * Math.PI * 2;
+      this.floatSpeed = 0.015;
+      this.baseY = this.y;
+      this.pulseOffset = 0;
+    }
+
+    draw() {
+      this.floatOffset += this.floatSpeed;
+      this.y = this.baseY + Math.sin(this.floatOffset) * 20;
+      this.pulseOffset += 0.05;
+      const pulse = 1 + Math.sin(this.pulseOffset) * 0.1;
+
+      ctx.save();
+      ctx.translate(this.x, this.y);
+
+      // Question block
+      ctx.shadowColor = '#FFD700';
+      ctx.shadowBlur = 20 * pulse;
+
+      const gradient = ctx.createLinearGradient(-this.size/2, -this.size/2, this.size/2, this.size/2);
+      gradient.addColorStop(0, '#FFD700');
+      gradient.addColorStop(0.5, '#FFA500');
+      gradient.addColorStop(1, '#FF8C00');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+
+      // Border
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(-this.size/2, -this.size/2, this.size, this.size);
+
+      // Question mark
+      ctx.fillStyle = '#FFFF00';
+      ctx.font = 'bold 20px Courier New';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', 0, 0);
+
+      ctx.restore();
+    }
+  }
+
+  class Barrel {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = 25;
+      this.dx = (Math.random() - 0.5) * 0.5;
+      this.dy = (Math.random() - 0.5) * 0.5;
+      this.rotation = 0;
+    }
+
+    draw() {
+      this.x += this.dx;
+      this.y += this.dy;
+      this.rotation += 0.02;
+
+      if (this.x < 0 || this.x > canvas.width) this.dx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.dy *= -1;
+
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+
+      // Barrel body
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+
+      // Barrel bands
+      ctx.strokeStyle = '#654321';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-this.size/2, -this.size/4);
+      ctx.lineTo(this.size/2, -this.size/4);
+      ctx.moveTo(-this.size/2, this.size/4);
+      ctx.lineTo(this.size/2, this.size/4);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  }
+
+  // === SPACE INVADERS CLASS ===
+  class SpaceInvader {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = 25;
+      this.dx = (Math.random() - 0.5) * 0.8;
+      this.dy = (Math.random() - 0.5) * 0.3;
+      this.animFrame = 0;
+      this.animSpeed = 0.1;
+      this.type = Math.floor(Math.random() * 3); // 3 alien types
+      this.color = ['#00FF00', '#FF00FF', '#00FFFF'][this.type];
+    }
+
+    draw() {
+      this.x += this.dx;
+      this.y += this.dy;
+      this.animFrame += this.animSpeed;
+
+      // Bounce off edges
+      if (this.x < 0 || this.x > canvas.width) this.dx *= -1;
+      if (this.y < 0 || this.y > canvas.height) this.dy *= -1;
+
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.fillStyle = this.color;
+      ctx.shadowColor = this.color;
+      ctx.shadowBlur = 15;
+
+      const frame = Math.floor(this.animFrame) % 2;
+      const s = this.size / 8;
+
+      // Draw classic Space Invader sprite (pixelated)
+      if (this.type === 0) {
+        // Squid alien
+        const pattern = frame === 0
+          ? [[0,0,1,0,0,0,0,0,1,0,0],
+             [0,0,0,1,0,0,0,1,0,0,0],
+             [0,0,1,1,1,1,1,1,1,0,0],
+             [0,1,1,0,1,1,1,0,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,0,1,0,0,0,0,0,1,0,1],
+             [0,0,0,1,1,0,1,1,0,0,0]]
+          : [[0,0,1,0,0,0,0,0,1,0,0],
+             [1,0,0,1,0,0,0,1,0,0,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,1,1,0,1,1,1,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [0,1,1,1,1,1,1,1,1,1,0],
+             [0,0,1,0,0,0,0,0,1,0,0],
+             [0,1,0,0,0,0,0,0,0,1,0]];
+        this.drawPattern(pattern, s);
+      } else if (this.type === 1) {
+        // Crab alien
+        const pattern = frame === 0
+          ? [[0,0,1,0,0,0,0,0,1,0,0],
+             [0,0,0,1,0,0,0,1,0,0,0],
+             [0,0,1,1,1,1,1,1,1,0,0],
+             [0,1,1,0,1,1,1,0,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,0,1,0,0,0,0,0,1,0,1],
+             [0,0,0,1,1,0,1,1,0,0,0]]
+          : [[0,0,1,0,0,0,0,0,1,0,0],
+             [1,0,0,1,0,0,0,1,0,0,1],
+             [1,0,1,1,1,1,1,1,1,0,1],
+             [1,1,1,0,1,1,1,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1],
+             [0,1,1,1,1,1,1,1,1,1,0],
+             [0,0,1,0,0,0,0,0,1,0,0],
+             [0,1,0,0,0,0,0,0,0,1,0]];
+        this.drawPattern(pattern, s);
+      } else {
+        // Octopus alien
+        const pattern = frame === 0
+          ? [[0,0,0,0,1,1,1,1,0,0,0,0],
+             [0,1,1,1,1,1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [1,1,1,0,0,1,1,0,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [0,0,1,1,1,0,0,1,1,1,0,0],
+             [0,1,1,0,0,1,1,0,0,1,1,0],
+             [1,1,0,0,0,0,0,0,0,0,1,1]]
+          : [[0,0,0,0,1,1,1,1,0,0,0,0],
+             [0,1,1,1,1,1,1,1,1,1,1,0],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [1,1,1,0,0,1,1,0,0,1,1,1],
+             [1,1,1,1,1,1,1,1,1,1,1,1],
+             [0,0,0,1,1,0,0,1,1,0,0,0],
+             [0,0,1,1,0,1,1,0,1,1,0,0],
+             [0,0,1,1,0,0,0,0,1,1,0,0]];
+        this.drawPattern(pattern, s);
+      }
+
+      ctx.restore();
+    }
+
+    drawPattern(pattern, pixelSize) {
+      const offsetX = -(pattern[0].length * pixelSize) / 2;
+      const offsetY = -(pattern.length * pixelSize) / 2;
+
+      for (let row = 0; row < pattern.length; row++) {
+        for (let col = 0; col < pattern[row].length; col++) {
+          if (pattern[row][col] === 1) {
+            ctx.fillRect(
+              offsetX + col * pixelSize,
+              offsetY + row * pixelSize,
+              pixelSize,
+              pixelSize
+            );
+          }
+        }
+      }
+    }
+  }
+
+  // Create arcade elements (optimized counts)
+  const dvdBox = new DVDBouncingBox(); // The iconic bouncing DVD box!
+  const coins = Array.from({ length: 3 }, () => new ArcadeCoin()); // Reduced from 5
+  const questionBlocks = Array.from({ length: 2 }, () => new QuestionBlock()); // Reduced from 3
+  const barrels = Array.from({ length: 1 }, () => new Barrel()); // Reduced from 2
+  const spaceInvaders = Array.from({ length: 4 }, () => new SpaceInvader()); // Reduced from 6
+
+  function drawGrid() {
+    const gridSize = 40;
+    ctx.strokeStyle = "rgba(0, 255, 255, 0.05)";
+    ctx.lineWidth = 1;
+
+    // Animated vertical lines
+    for (let x = (gridOffset % gridSize); x < canvas.width; x += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+
+    // Animated horizontal lines
+    for (let y = (gridOffset % gridSize); y < canvas.height; y += gridSize) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+
+    gridOffset += 0.3; // Slow scroll
+  }
+
+  // Optimized scanlines - draw less frequently
+  let scanlineFrame = 0;
+  function drawScanlines() {
+    scanlineFrame++;
+    if (scanlineFrame % 2 !== 0) return; // Only draw every other frame
+
+    ctx.strokeStyle = "rgba(0, 255, 0, 0.03)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < canvas.height; i += 6) { // Increased spacing from 4 to 6
+      ctx.beginPath();
+      ctx.moveTo(0, i);
+      ctx.lineTo(canvas.width, i);
+      ctx.stroke();
+    }
+  }
+
+  // Optimized animation loop with requestAnimationFrame throttling
+  let lastTime = 0;
+  const fps = 60;
+  const frameInterval = 1000 / fps;
+
+  function animate(currentTime = 0) {
+    const deltaTime = currentTime - lastTime;
+
+    // Throttle to target FPS for smoother performance
+    if (deltaTime < frameInterval) {
+      requestAnimationFrame(animate);
+      return;
+    }
+
+    lastTime = currentTime - (deltaTime % frameInterval);
+
+    // Dark retro background (very transparent to show video)
+    ctx.fillStyle = "rgba(5, 0, 15, 0.05)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    orbs.forEach((o) => o.update());
+
+    // Draw starfield
+    stars.forEach(star => {
+      star.update();
+      star.draw();
+    });
+
+    // Draw grid
+    drawGrid();
+
+    // Draw the iconic DVD bouncing box FIRST (behind everything)
+    dvdBox.draw();
+
+    // Draw pixel blocks
+    blocks.forEach(block => block.update());
+
+    // Draw arcade game elements (Mario/DK style)
+    coins.forEach(coin => coin.draw());
+    questionBlocks.forEach(block => block.draw());
+    barrels.forEach(barrel => barrel.draw());
+
+    // Draw Space Invaders aliens
+    spaceInvaders.forEach(invader => invader.draw());
+
+    // Add scanlines for CRT effect (optimized)
+    drawScanlines();
+
     requestAnimationFrame(animate);
   }
 
