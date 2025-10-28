@@ -979,8 +979,8 @@ function initDashboardSpaceInvaders() {
     }
   }
 
-  // Create invaders
-  const invaders = Array.from({ length: 8 }, () => new DashboardInvader());
+  // Create invaders (reduced for performance)
+  const invaders = Array.from({ length: 4 }, () => new DashboardInvader());
 
   // Laser beam effect
   class LaserBeam {
@@ -1010,7 +1010,7 @@ function initDashboardSpaceInvaders() {
     }
   }
 
-  const lasers = Array.from({ length: 5 }, () => new LaserBeam());
+  const lasers = Array.from({ length: 3 }, () => new LaserBeam()); // Reduced from 5 for performance
 
   // Animation loop
   function animate() {

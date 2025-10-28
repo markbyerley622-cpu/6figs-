@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <!-- Video background (very back layer) -->
+  <!-- Video background (very back layer - BLACK TV SCREEN) -->
   <!-- muted is REQUIRED for autoplay to work in modern browsers -->
   <!-- playsinline is REQUIRED for iOS devices -->
   <video
@@ -16,7 +16,7 @@
     muted
     loop
     playsinline
-    preload="auto"
+    preload="metadata"
     style="
       position: fixed;
       top: 0;
@@ -25,8 +25,9 @@
       height: 100%;
       object-fit: cover;
       z-index: -2;
-      opacity: 0.4;
+      opacity: 0.5;
       pointer-events: none;
+      background: #000000;
     "
   >
     <source src="retardiovid.mp4" type="video/mp4">
@@ -40,7 +41,7 @@
         || window.innerWidth < 768;
     }
 
-    // Force video to play (DESKTOP ONLY)
+    // Force video to play (DESKTOP ONLY) - BLACK TV SCREEN BACKGROUND
     document.addEventListener('DOMContentLoaded', function() {
       const video = document.getElementById('bgVideo');
 
@@ -52,34 +53,78 @@
           return;
         }
 
-        console.log('[VIDEO] Desktop device - attempting to play background video...');
+        console.log('[VIDEO] Desktop device - attempting to play background video on BLACK TV SCREEN...');
 
-        video.play().then(() => {
-          console.log('[VIDEO] ✅ Video is playing');
-        }).catch(err => {
-          console.error('[VIDEO] ❌ Failed to play:', err);
-          // Try again on user interaction
-          document.body.addEventListener('click', function playOnce() {
-            video.play().then(() => {
-              console.log('[VIDEO] ✅ Video started after user interaction');
-              document.body.removeEventListener('click', playOnce);
-            }).catch(e => console.error('[VIDEO] Still failed:', e));
+        // Ensure video is ready
+        video.load(); // Force reload
+
+        // Try to play immediately
+        const attemptPlay = () => {
+          video.play().then(() => {
+            console.log('[VIDEO] ✅ Video is playing on BLACK TV SCREEN background');
+            console.log('[VIDEO] Current time:', video.currentTime, 'Duration:', video.duration);
+          }).catch(err => {
+            console.error('[VIDEO] ❌ Failed to play:', err.message);
+            console.log('[VIDEO] Will retry on user interaction...');
+
+            // Try again on user interaction
+            const playOnce = () => {
+              video.play().then(() => {
+                console.log('[VIDEO] ✅ Video started after user interaction');
+              }).catch(e => console.error('[VIDEO] Still failed:', e.message));
+            };
+
+            document.addEventListener('click', playOnce, { once: true });
+            document.addEventListener('touchstart', playOnce, { once: true });
+            document.addEventListener('keydown', playOnce, { once: true });
           });
+        };
+
+        // Try to play when metadata is loaded
+        video.addEventListener('loadedmetadata', () => {
+          console.log('[VIDEO] Metadata loaded, attempting play...');
+          attemptPlay();
         });
 
-        // Log when video is ready
+        // Try to play when data is loaded
+        video.addEventListener('loadeddata', () => {
+          console.log('[VIDEO] Video data loaded');
+          if (video.paused) {
+            attemptPlay();
+          }
+        });
+
+        // Log when video can play
         video.addEventListener('canplay', () => {
           console.log('[VIDEO] Video can play - duration:', video.duration, 'seconds');
+          if (video.paused) {
+            attemptPlay();
+          }
+        });
+
+        // Monitor playing state
+        video.addEventListener('playing', () => {
+          console.log('[VIDEO] ✅ Video is now playing on BLACK TV SCREEN');
+        });
+
+        video.addEventListener('pause', () => {
+          console.log('[VIDEO] ⚠️ Video paused - attempting to resume...');
+          if (video.readyState >= 2) {
+            attemptPlay();
+          }
         });
 
         video.addEventListener('error', (e) => {
-          console.error('[VIDEO] Video error:', e);
-          console.error('[VIDEO] Error details:', video.error);
+          console.error('[VIDEO] ❌ Video error:', e);
+          if (video.error) {
+            console.error('[VIDEO] Error code:', video.error.code, 'Message:', video.error.message);
+          }
         });
 
-        video.addEventListener('loadeddata', () => {
-          console.log('[VIDEO] Video data loaded');
-        });
+        // Initial play attempt
+        if (video.readyState >= 2) {
+          attemptPlay();
+        }
       }
     });
   </script>
@@ -564,8 +609,8 @@ function launchConfetti() {
     }
   }
 
-  const blocks = Array.from({ length: 8 }, () => new PixelBlock()); // Reduced from 12
-  const stars = Array.from({ length: 30 }, () => new Star()); // Reduced from 50
+  const blocks = Array.from({ length: 4 }, () => new PixelBlock()); // Reduced from 8 for performance
+  const stars = Array.from({ length: 15 }, () => new Star()); // Reduced from 30 for performance
   let gridOffset = 0;
 
   // === DVD BOUNCING BOX (Classic Screensaver Style) ===
@@ -893,12 +938,12 @@ function launchConfetti() {
     }
   }
 
-  // Create arcade elements (optimized counts)
+  // Create arcade elements (heavily optimized for performance)
   const dvdBox = new DVDBouncingBox(); // The iconic bouncing DVD box!
-  const coins = Array.from({ length: 3 }, () => new ArcadeCoin()); // Reduced from 5
-  const questionBlocks = Array.from({ length: 2 }, () => new QuestionBlock()); // Reduced from 3
-  const barrels = Array.from({ length: 1 }, () => new Barrel()); // Reduced from 2
-  const spaceInvaders = Array.from({ length: 4 }, () => new SpaceInvader()); // Reduced from 6
+  const coins = Array.from({ length: 2 }, () => new ArcadeCoin()); // Reduced from 3
+  const questionBlocks = Array.from({ length: 1 }, () => new QuestionBlock()); // Reduced from 2
+  const barrels = []; // Disabled for performance
+  const spaceInvaders = Array.from({ length: 2 }, () => new SpaceInvader()); // Reduced from 4 for performance
 
   function drawGrid() {
     const gridSize = 40;
