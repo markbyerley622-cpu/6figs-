@@ -703,7 +703,7 @@ const soldUpload = document.getElementById("sold-upload");
 const treasuryEl = document.getElementById("Treasury");
 
 // Your Solana wallet address
-const walletAddress = "2WdNzcqwUG1ex2eqAUgMiM9NLNHBoUJb8pFc9TyBPXM2";
+const walletAddress = "BpPzoVoTaeTkDr7TAAzdJcXJuDLbJ1FETaU8PQkjqveg";
 
 // Update the text and link
 treasuryEl.textContent = walletAddress;
