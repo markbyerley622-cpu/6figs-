@@ -122,7 +122,10 @@ app.post("/update-state", (req, res) => {
 const newState = structuredClone(state);
 
 for (const key in updates) {
-  if (typeof updates[key] === "object" && !Array.isArray(updates[key])) {
+  if (updates[key] === null) {
+    // ✅ Explicitly handle null values (for deleting nextPurchase, etc.)
+    newState[key] = null;
+  } else if (typeof updates[key] === "object" && !Array.isArray(updates[key])) {
     newState[key] = { ...(state[key] || {}), ...updates[key] };
   } else {
     newState[key] = updates[key];
