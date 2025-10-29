@@ -343,6 +343,13 @@ window.addEventListener("keydown", async (e) => {
         // ✅ Reload galleries to show delete buttons
         if (typeof loadGallery === "function") loadGallery();
         if (typeof loadSoldGallery === "function") loadSoldGallery();
+
+        // ✅ Reload next purchase NFT to show delete button
+        if (typeof loadGlobalState === "function") {
+          loadGlobalState().then(() => {
+            console.log("✅ Next purchase NFT reloaded with delete button");
+          });
+        }
       } else {
         alert("Access denied 🚫");
       }

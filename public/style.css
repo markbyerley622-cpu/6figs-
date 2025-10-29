@@ -555,12 +555,14 @@ h2 {
   background: rgba(255, 79, 216, 0.05);
   border: 1px solid #ff4fd8;
   border-radius: 12px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 10px;
   transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  cursor: pointer;
 }
 
 /* shrink if container tries to expand it */
@@ -578,6 +580,8 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+  z-index: 2;
 }
 
 #next-nft-preview .nft-name {
@@ -756,7 +760,7 @@ h2 {
     linear-gradient(135deg, rgba(0,50,100,0.3) 0%, rgba(100,0,100,0.3) 100%);
   border: 3px solid #FF00FF;
   border-radius: 4px;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -783,6 +787,7 @@ h2 {
     rgba(255, 255, 255, 0.02) 20px
   );
   pointer-events: none;
+  z-index: 1;
 }
 
 .nft-card:hover {
@@ -801,6 +806,8 @@ h2 {
   object-fit: cover;
   border-radius: 8px;
   margin-bottom: 8px;
+  position: relative;
+  z-index: 2;
 }
 
 .nft-info {
@@ -808,6 +815,8 @@ h2 {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
+  z-index: 2;
 }
 
 .nft-name {
@@ -897,7 +906,7 @@ h2 {
   position: absolute;
   top: 6px;
   right: 8px;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.8);
   color: #ff4fd8;
   font-weight: bold;
   font-size: 1rem;
@@ -910,7 +919,8 @@ h2 {
   opacity: 0;
   cursor: pointer;
   transition: opacity 0.2s ease, transform 0.2s ease;
-  z-index: 5;
+  z-index: 10;
+  border: 2px solid #ff4fd8;
 }
 
 .nft-card {
@@ -999,66 +1009,52 @@ h2 {
    /* --- Developer Panel - RETRO ARCADE --- */
     #dev-panel {
       position: fixed;
-      top: 50%;
-      left: 10px;
-      transform: translateY(-50%);
+      top: 145px; /* Position under Follow X container (15px + button heights + gaps) */
+      left: 20px; /* Align with Follow X container */
       background:
-        linear-gradient(135deg, rgba(0,50,100,0.2) 0%, rgba(100,0,100,0.2) 100%);
-      border: 3px solid #00FFFF;
+        linear-gradient(135deg, rgba(0,50,100,0.15) 0%, rgba(100,0,100,0.15) 100%);
+      border: 2px solid rgba(255, 0, 255, 0.4);
       border-radius: 4px;
-      padding: 10px;
+      padding: 6px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      transition: left 0.4s ease, background 0.3s;
-      z-index: 9999;
+      gap: 4px;
+      transition: all 0.3s ease;
+      z-index: 9998; /* Below nav buttons */
       box-shadow:
-        0 0 20px rgba(0, 255, 255, 0.4),
-        inset 0 0 30px rgba(0, 255, 255, 0.05);
-    }
-
-    #dev-panel::after {
-      content: "⚙️";
-      position: absolute;
-      right: -30px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: linear-gradient(135deg, #FFFF00, #FF00FF);
-      color: #000;
-      padding: 6px 8px;
-      border: 2px solid #00FFFF;
-      border-radius: 0 4px 4px 0;
-      font-size: 14px;
-      cursor: pointer;
-      box-shadow: 0 0 15px rgba(255, 255, 0, 0.6);
+        0 0 15px rgba(255, 0, 255, 0.3),
+        inset 0 0 20px rgba(255, 0, 255, 0.05);
+      width: auto;
     }
 
     #dev-panel:hover {
-      left: 10px;
       background:
-        linear-gradient(135deg, rgba(0,100,150,0.3) 0%, rgba(150,0,150,0.3) 100%);
+        linear-gradient(135deg, rgba(0,100,150,0.2) 0%, rgba(150,0,150,0.2) 100%);
       box-shadow:
-        0 0 30px rgba(0, 255, 255, 0.6),
-        inset 0 0 40px rgba(0, 255, 255, 0.1);
+        0 0 20px rgba(255, 0, 255, 0.5),
+        inset 0 0 25px rgba(255, 0, 255, 0.08);
+      transform: translateY(-2px);
     }
 
     .dev-btn {
-      background: linear-gradient(135deg, #FF00FF, #00FFFF);
-      border: 2px solid #FFFF00;
+      background: linear-gradient(135deg, rgba(255, 0, 255, 0.5), rgba(0, 255, 255, 0.5));
+      border: 2px solid rgba(255, 255, 0, 0.5);
       color: #000;
       font-weight: bold;
       border-radius: 4px;
-      padding: 6px 10px;
+      padding: 6px 12px;
       cursor: pointer;
       font-family: 'Courier New', monospace;
       text-transform: uppercase;
+      font-size: 0.75rem;
       box-shadow:
-        0 0 10px rgba(255, 0, 255, 0.5),
-        0 3px 0 rgba(0, 0, 0, 0.3);
+        0 0 10px rgba(255, 0, 255, 0.3),
+        0 2px 0 rgba(0, 0, 0, 0.2);
       transition: all 0.2s;
       position: relative;
       top: 0;
       overflow: hidden;
+      min-height: 36px;
     }
 
     /* Scanline overlay on buttons */
@@ -1084,17 +1080,19 @@ h2 {
     }
 
     .dev-btn:hover {
-      background: linear-gradient(135deg, #FFFF00, #00FF00);
-      border-color: #FF00FF;
+      background: linear-gradient(135deg, rgba(255, 255, 0, 0.6), rgba(0, 255, 0, 0.6));
+      border-color: rgba(255, 0, 255, 0.7);
       box-shadow:
-        0 0 15px rgba(255, 255, 0, 0.7),
-        0 1px 0 rgba(0, 0, 0, 0.3);
-      top: 2px;
+        0 0 15px rgba(255, 255, 0, 0.5),
+        0 2px 0 rgba(0, 0, 0, 0.2);
+      top: 1px;
+      transform: scale(1.02);
     }
 
     .dev-btn:active {
-      top: 3px;
-      box-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+      top: 2px;
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.4);
+      transform: scale(1);
     }
 
     /* --- Chart Styling --- */
@@ -1487,17 +1485,22 @@ h2 {
   }
 
   #connect-wallet-btn,
-  #follow-x-btn {
+  #follow-x-btn,
+  .lobby-btn {
     width: 100%;
     max-width: 240px;
   }
 
   #dev-panel {
     position: static;
-    transform: none;
-    margin: 20px auto 0;
+    margin: 10px auto 0;
     width: 100%;
-    max-width: 300px;
+    max-width: 240px;
+    align-items: stretch;
+  }
+
+  .dev-btn {
+    width: 100%;
   }
 }
 

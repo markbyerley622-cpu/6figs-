@@ -80,20 +80,11 @@ socket.on("stateUpdated", (state) => {
   // 🎯 Next NFT goal
   if (state.nextPurchase) {
     const next = state.nextPurchase;
-    const container = document.getElementById("next-nft-preview");
-    if (container) {
-      container.innerHTML = `
-        <div class="nft-card" onclick="window.open('${next.link}', '_blank')">
-          <img src="${next.image}" alt="${next.name}" class="nft-img">
-          <div class="nft-info">
-            <p class="nft-name">${next.name}</p>
-            <p class="nft-price">${next.price} SOL</p>
-          </div>
-        </div>
-      `;
-    }
+    renderNextPurchaseNFT(next);
     window.nextPurchasePrice = next.price;
     updateProgress();
+  } else {
+    renderNextPurchaseNFT(null);
   }
 
   // 🎉 Confetti trigger (no more polling)
@@ -183,24 +174,87 @@ async function loadGlobalState() {
     // 🎯 Next NFT Goal
     if (state.nextPurchase) {
       const next = state.nextPurchase;
-      const container = document.getElementById("next-nft-preview");
-      if (container) {
-        container.innerHTML = `
-          <div class="nft-card" onclick="window.open('${next.link}', '_blank')">
-            <img src="${next.image}" alt="${next.name}" class="nft-img">
-            <div class="nft-info">
-              <p class="nft-name">${next.name}</p>
-              <p class="nft-price">${next.price} SOL</p>
-            </div>
-          </div>
-        `;
-      }
+      renderNextPurchaseNFT(next);
       window.nextPurchasePrice = next.price;
       updateProgress();
     }
 
   } catch (err) {
     console.warn("⚠️ Could not load global state:", err);
+  }
+}
+
+// === Render Next Purchase NFT with Delete Button ===
+function renderNextPurchaseNFT(next) {
+  const container = document.getElementById("next-nft-preview");
+  if (!container) return;
+
+  if (!next) {
+    container.innerHTML = `<p>No next NFT uploaded yet.</p>`;
+    window.nextPurchasePrice = 0;
+    updateProgress();
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="nft-card" onclick="window.open('${next.link}', '_blank')">
+      <img src="${next.image}" alt="${next.name}" class="nft-img">
+      <div class="nft-info">
+        <p class="nft-name">${next.name}</p>
+        <p class="nft-price">${next.price} SOL</p>
+      </div>
+    </div>
+  `;
+
+  // Add delete button if dev mode is unlocked
+  console.log('[DELETE BTN] Checking if dev mode unlocked:', window.devUnlocked);
+  if (window.devUnlocked) {
+    const card = container.querySelector('.nft-card');
+    console.log('[DELETE BTN] Found card:', card ? 'yes' : 'no');
+    if (card) {
+      const deleteBtn = document.createElement("div");
+      deleteBtn.className = "delete-x";
+      deleteBtn.textContent = "✕";
+      deleteBtn.title = "Delete Next Purchase NFT";
+
+      deleteBtn.addEventListener("click", async (e) => {
+        e.stopPropagation(); // prevent opening link
+        const confirmDelete = confirm(`Delete next purchase NFT "${next.name}"?`);
+        if (!confirmDelete) return;
+
+        console.log('[DELETE NP] Attempting to delete next purchase NFT...');
+        try {
+          const devKey = localStorage.getItem("devKey");
+          console.log('[DELETE NP] Dev key found:', devKey ? 'yes' : 'no');
+
+          const res = await fetch("/update-state", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              key: devKey,
+              updates: { nextPurchase: null }
+            })
+          });
+          const data = await res.json();
+          console.log('[DELETE NP] Server response:', data);
+
+          if (data.success) {
+            alert("✅ Next purchase NFT deleted");
+            renderNextPurchaseNFT(null); // Clear the preview
+            window.nextPurchasePrice = 0;
+            updateProgress();
+          } else {
+            alert("❌ Failed to delete NFT: " + (data.error || "Unknown error"));
+          }
+        } catch (err) {
+          console.error("Delete failed:", err);
+          alert("Error deleting NFT: " + err.message);
+        }
+      });
+
+      card.appendChild(deleteBtn);
+      console.log('[DELETE BTN] Delete button added to card');
+    }
   }
 }
 
@@ -273,6 +327,11 @@ unlockTokenLoaderBtn.addEventListener("click", async () => {
       // ✅ Reload galleries to show delete buttons immediately
       loadGallery();
       loadSoldGallery();
+
+      // ✅ Reload next purchase NFT to show delete button
+      loadGlobalState().then(() => {
+        console.log("✅ Next purchase NFT reloaded with delete button");
+      });
     } else {
       alert("Wrong key!");
     }
@@ -584,16 +643,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const nextNFTContainer = document.getElementById("next-nft-preview");
         if (!nextNFTContainer) return alert("⚠️ next-nft-preview not found in DOM!");
 
-        // 🖼️ Update preview instantly
-        nextNFTContainer.innerHTML = `
-          <div class="nft-card" onclick="window.open('${link}', '_blank')">
-            <img src="${imageData}" alt="${name}" class="nft-img">
-            <div class="nft-info">
-              <p class="nft-name">${name}</p>
-              <p class="nft-price">${price.toFixed(2)} SOL</p>
-            </div>
-          </div>
-        `;
+        // Create next purchase object
+        const nextPurchase = {
+          name,
+          price,
+          link,
+          image: imageData
+        };
+
+        // 🖼️ Update preview instantly using render function
+        renderNextPurchaseNFT(nextPurchase);
 
         // 💾 Update progress vars
         window.nextPurchasePrice = price;
@@ -644,7 +703,7 @@ const soldUpload = document.getElementById("sold-upload");
 const treasuryEl = document.getElementById("Treasury");
 
 // Your Solana wallet address
-const walletAddress = "E1AJ5rcPiErwNGJa9E5g8nVFvDijJAj5Fo2j7MSS8ta4";
+const walletAddress = "2WdNzcqwUG1ex2eqAUgMiM9NLNHBoUJb8pFc9TyBPXM2";
 
 // Update the text and link
 treasuryEl.textContent = walletAddress;
